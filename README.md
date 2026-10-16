@@ -201,6 +201,7 @@ See [docs/HEALTH_CHECKS.md](docs/HEALTH_CHECKS.md).
 
 ## :compass: TODOs
 
+- [ ] zero-downtime deploys: start the new version next to the old one and switch only once it is healthy. Today a deploy replaces the container first, so a version that fails its health check is down until the rollback (~1.5 min with the default check timings)
 - [ ] add flag to use default input instead of prompting the user (`ez dotnet new -d`)
 - [ ] changing GIT_URL in app.env has no effect, will still pull from previous repo
 - [ ] GitLab CI example for app repositories
