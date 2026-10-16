@@ -70,6 +70,15 @@ ok "unhealthy sha-bbb rolled back to sha-aaa, deploy failed"
 [[ "$(cat apps/shop/env/generated/production.deployed)" == sha-aaa ]] || fail "tag unchanged"
 ok "deployed tag still sha-aaa"
 
+echo "image-mode app: test still builds from source"
+: >"$STUB_LOG"
+src2=$(mktemp -d); cp -R "$ROOT/example/." "$src2/"
+git -C "$src2" init -q -b test && git -C "$src2" add -A && git -C "$src2" -c user.email=t@t -c user.name=t commit -qm example
+sed -i.bak "s|^GIT_URL=.*|GIT_URL=$src2|; s|^PROJECT=.*|PROJECT=src/Example.Api/Example.Api.csproj|" apps/shop/env/app.env
+printf 'GIT_BRANCH=test\nAPP_ENV=test\nASPNETCORE_ENVIRONMENT=Test\nAPP_PORT=8002\nDB_DATABASE=\n' >apps/shop/env/test.env
+STUB_HEALTH=healthy $EZ dotnet deploy shop test >/dev/null 2>&1 || fail "image-mode app deploying test"
+expect_log 'compose -p shop_test -f apps/shop/compose-dotnet.yml --profile test .* build dotnet-test' "test built from source although the app is in image mode"
+
 echo "rollback command"
 $EZ dotnet rollback shop production sha-aaa >/dev/null 2>&1 || fail "rollback"
 grep -q 'APP_IMAGE=ghcr.io/acme/shop:sha-aaa' "$STUB_STATE" || fail "rollback image"
