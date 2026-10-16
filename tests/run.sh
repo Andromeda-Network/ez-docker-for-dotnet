@@ -8,7 +8,7 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 export PATH="$ROOT/tests/stub:$PATH" STUB_LOG="$WORK/docker.log" STUB_STATE="$WORK/state"
 # On a server ez runs with sudo and gives storage to the image's uid 1654; here, to ourselves.
-export IMAGE_USER_ID IMAGE_GROUP_ID; IMAGE_USER_ID=$(id -u); IMAGE_GROUP_ID=$(id -g)
+export IMAGE_USER_ID IMAGE_GROUP_ID MSSQL_UID; IMAGE_USER_ID=$(id -u); IMAGE_GROUP_ID=$(id -g); MSSQL_UID=$(id -u)
 pass=0
 ok()   { echo "  ok   $*"; pass=$((pass + 1)); }
 fail() { echo "  FAIL $*"; echo "--- docker calls:"; cat "$STUB_LOG"; exit 1; }
@@ -24,6 +24,8 @@ printf 'ez-net\n81\nmssql\nseq\n' | $EZ shared deploy >/dev/null
 grep -q '^DB_ENGINE=mssql$' docker/docker.env && grep -q '^MSSQL_SA_PASSWORD=.\{24\}Aa1$' docker/docker.env || fail "docker.env"
 ok "docker.env created with a generated sa password"
 expect_log 'compose -p ez-shared .*--profile mssql --profile seq up -d' "shared compose starts mssql and seq"
+[[ -d shared/mssql ]] || fail "shared/mssql created before SQL Server starts"
+ok "shared/mssql created for SQL Server's user"
 
 echo "new app"
 me=$(id -un)
