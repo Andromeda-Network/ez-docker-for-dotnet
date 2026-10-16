@@ -2,7 +2,7 @@ setup_environment() {
   local app_name=$1
   local environment=$2
 
-  local branch_name db_database db_username generated_password db_password aspnet_env app_port db_host connection
+  local branch_name db_database db_username generated_password db_password aspnet_env app_port connection
 
   if [ "$environment" == "production" ]; then
     branch_name="main"

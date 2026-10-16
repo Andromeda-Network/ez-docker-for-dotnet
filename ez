@@ -865,7 +865,7 @@ assign_port() {
   local base_port=$2
   local num_apps default_port app_port
 
-  num_apps=$(ls -l apps | grep -c '^d')
+  num_apps=$(find apps -mindepth 1 -maxdepth 1 -type d | wc -l)
   default_port=$((base_port + num_apps))
 
   while true; do
@@ -1246,7 +1246,8 @@ sanitize_password() {
 # src/lib/is_container_healthy.sh
 is_container_healthy() {
     local container_name=$1
-    local health_status=$(docker inspect --format='{{.State.Health.Status}}' "$container_name")
+    local health_status
+    health_status=$(docker inspect --format='{{.State.Health.Status}}' "$container_name")
     if [ "$health_status" == "healthy" ]; then
         return 0
     else
@@ -1302,7 +1303,7 @@ load_env() {
       # Only names a shell can hold. .NET settings like Logging__LogLevel__Default are fine; a
       # name with '-' or '.' still reaches the container through env_file, just not this shell.
       if [[ "${CLEANED_LINE%%=*}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
-        export "$CLEANED_LINE"
+        export "${CLEANED_LINE?}"
       fi
     fi
   done < "$filePath"
@@ -1489,7 +1490,7 @@ setup_environment() {
   local app_name=$1
   local environment=$2
 
-  local branch_name db_database db_username generated_password db_password aspnet_env app_port db_host connection
+  local branch_name db_database db_username generated_password db_password aspnet_env app_port connection
 
   if [ "$environment" == "production" ]; then
     branch_name="main"
@@ -1607,8 +1608,7 @@ ez_docker_install_command() {
 
   # Add the repository to Apt sources:
   echo \
-    "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" |
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
     tee /etc/apt/sources.list.d/docker.list >/dev/null
   apt-get update
 

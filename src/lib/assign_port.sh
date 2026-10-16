@@ -3,7 +3,7 @@ assign_port() {
   local base_port=$2
   local num_apps default_port app_port
 
-  num_apps=$(ls -l apps | grep -c '^d')
+  num_apps=$(find apps -mindepth 1 -maxdepth 1 -type d | wc -l)
   default_port=$((base_port + num_apps))
 
   while true; do

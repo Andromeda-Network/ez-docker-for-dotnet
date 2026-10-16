@@ -1,6 +1,7 @@
 is_container_healthy() {
     local container_name=$1
-    local health_status=$(docker inspect --format='{{.State.Health.Status}}' "$container_name")
+    local health_status
+    health_status=$(docker inspect --format='{{.State.Health.Status}}' "$container_name")
     if [ "$health_status" == "healthy" ]; then
         return 0
     else
