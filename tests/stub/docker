@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 # A stand-in for `docker` in tests/run.sh: records every call in $STUB_LOG and answers like a
-# healthy host. STUB_HEALTH=unhealthy makes app containers fail their health check;
-# STUB_HEALTH_AFTER=<tag> makes only containers started with that image tag healthy.
+# healthy host.
+#   STUB_HEALTH=unhealthy        app containers fail their checks (health, HTTP, running)
+#   STUB_HEALTH_AFTER=<tag>      only containers started from images tagged <tag> are healthy
+#   STUB_DOWN_SERVICE=<name>     only that service's containers (<app>_<env>_<name>) fail
+#   STUB_HAS_IMAGE=1             `docker image inspect` finds every image
 echo "docker $*" >>"$STUB_LOG"
+
+# Is this app container up, given the switches above? $1 = container name.
+app_ok() {
+  if [[ -n "${STUB_DOWN_SERVICE:-}" && "$1" == *"_${STUB_DOWN_SERVICE}" ]]; then return 1; fi
+  if [[ -n "${STUB_HEALTH_AFTER:-}" ]]; then grep -q ":${STUB_HEALTH_AFTER}\"" "$STUB_STATE" 2>/dev/null; return; fi
+  [[ "${STUB_HEALTH:-healthy}" == healthy ]]
+}
+
 case "$1" in
   ps)
     # is_container_running: echo the name it filters for.
@@ -12,16 +23,22 @@ case "$1" in
   exec) cat >/dev/null; exit 0 ;;
   logs) echo "(stub logs)"; exit 0 ;;
   inspect)
-    container="${*: -1}"
+    format="$3"; container="${*: -1}"
     if [[ "$container" == nginx-pm || "$container" == mssql || "$container" == postgres ]]; then echo healthy; exit 0; fi
-    if [[ -n "${STUB_HEALTH_AFTER:-}" ]]; then
-      grep -q "APP_IMAGE=.*:${STUB_HEALTH_AFTER}\b" "$STUB_STATE" 2>/dev/null && echo healthy || echo unhealthy
-    else
-      echo "${STUB_HEALTH:-healthy}"
-    fi ;;
+    case "$format" in
+      *IPAddress*) echo "172.18.0.9" ;;
+      *StartedAt*Status*|*Status*StartedAt*) app_ok "$container" && echo "running 2026-01-01T00:00:00Z" || echo "running 2026-01-01T00:00:0${RANDOM:0:1}Z" ;;
+      *StartedAt*) echo "2026-01-01T00:00:00Z" ;;
+      '{{.State.Status}}') app_ok "$container" && echo running || echo exited ;;
+      *) app_ok "$container" && echo healthy || echo unhealthy ;;
+    esac ;;
   compose)
-    # Remember which image the last `up` used (the environment is what compose interpolates).
-    if [[ " $* " == *" up "* ]]; then echo "APP_IMAGE=${APP_IMAGE:-}" >"$STUB_STATE"; fi
+    # Remember the images the last `up` started (they are in the generated compose file).
+    if [[ " $* " == *" up "* ]]; then
+      args=("$@"); for ((i = 0; i < ${#args[@]}; i++)); do
+        if [[ "${args[i]}" == -f ]]; then grep -h 'image:' "${args[i+1]}"; fi
+      done >"$STUB_STATE"
+    fi
     exit 0 ;;
   *) exit 0 ;;
 esac

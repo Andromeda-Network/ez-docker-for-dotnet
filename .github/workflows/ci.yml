@@ -23,7 +23,20 @@ jobs:
       - name: shellcheck
         run: shellcheck -S warning ez tests/run.sh tests/stub/docker
       - name: Flow tests (stub docker)
-        run: bash tests/run.sh
+        run: EZ_TEST_OUT=$RUNNER_TEMP/generated bash tests/run.sh
+      - name: The compose files ez generated are valid
+        run: |
+          set -e
+          ls "$RUNNER_TEMP/generated"
+          for f in "$RUNNER_TEMP"/generated/*.yml; do
+            echo "== $f"
+            override=$(dirname "$(grep -m1 'env_file' "$f" | sed 's/.*\[ "\(.*\)" \].*/\1/')")/../../compose.override.yml
+            if [[ -f "$override" ]]; then
+              docker compose -f "$f" -f "$override" --profile migrate config --quiet
+            else
+              docker compose -f "$f" --profile migrate config --quiet
+            fi
+          done
 
   template:
     runs-on: ubuntu-latest
@@ -52,15 +65,9 @@ jobs:
           curl -fsS http://localhost:8080/healthz | grep -qx Healthy
           test "$(docker exec example id -u)" != 0
           test "$(docker exec example date +%z)" = "+0330"
-      - name: Compose files are valid
+      - name: Shared compose file is valid
         run: |
-          set -e
-          export SHARED_NETWORK_NAME=ez APP_NAME=demo APP_ENV=production PROJECT=src/A/A.csproj \
-                 ASPNETCORE_ENVIRONMENT=Production APP_IMAGE=ghcr.io/acme/demo:1 MIGRATIONS_IMAGE=ghcr.io/acme/demo-migrations:1 \
-                 OWNER_USER_ID=1000 OWNER_GROUP_ID=1000 APP_PORT=8000 MSSQL_SA_PASSWORD=x REDIS_PASSWORD=x POSTGRES_PASSWORD=x SEQ_ADMIN_PASSWORD=x
+          export SHARED_NETWORK_NAME=ez MSSQL_SA_PASSWORD=x REDIS_PASSWORD=x POSTGRES_PASSWORD=x SEQ_ADMIN_PASSWORD=x
           docker compose -f docker/compose-shared.yml --profile mssql --profile postgres --profile seq --profile portainer config --quiet
-          for env in dev test staging production; do mkdir -p template/env/generated template/src-$env; touch template/env/generated/$env.env; done
-          for env in dev test staging production; do APP_ENV=$env docker compose -f template/compose-dotnet.yml --profile $env --profile migrate config --quiet; done
-          docker compose -f template/compose-dotnet-image.yml --profile production --profile migrate config --quiet
       - if: always()
         run: docker logs example || true

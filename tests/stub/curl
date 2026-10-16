@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# A stand-in for curl in tests/run.sh: wait_for_http's probe. Healthy unless STUB_HEALTH says
+# otherwise (the stub docker answers 172.18.0.9 for every container, so the service is unknown
+# here; STUB_DOWN_SERVICE is honoured through `docker inspect` instead).
+echo "curl $*" >>"$STUB_LOG"
+[[ "${STUB_HEALTH:-healthy}" == healthy && -z "${STUB_HTTP_DOWN:-}" ]]

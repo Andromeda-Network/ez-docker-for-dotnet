@@ -66,7 +66,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app .
-# Writable data lives in volumes owned by the app user (storage-<env>, see compose-dotnet.yml).
+# Writable data lives in volumes owned by the app user (storage-<env>, mounted by the compose file ez generates).
 RUN mkdir -p /app/data && chown $APP_UID /app/data
 USER $APP_UID
 EXPOSE 8080

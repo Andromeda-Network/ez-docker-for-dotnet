@@ -1,7 +1,6 @@
 update_source_code() {
   log_info "updating source code ..."
   local source_code_dir="apps/${args[APP_NAME]}/src-${args[APP_ENV]}"
-  local project_path="${source_code_dir}/${PROJECT}"
 
   if [ -d "$source_code_dir/.git" ]; then
       log "Updating existing $source_code_dir folder ($GIT_BRANCH)"
@@ -24,11 +23,21 @@ update_source_code() {
       cp "apps/${args[APP_NAME]}/.dockerignore" "$source_code_dir/.dockerignore"
   fi
 
-  if [ ! -f "$project_path" ]; then
-      log_error "Error: project not found at $project_path"
-      log_error "PROJECT is set to: '${PROJECT}' in apps/${args[APP_NAME]}/env/app.env"
+  local svc project dockerfile context
+  for svc in $(app_services); do
+    context="$source_code_dir/$(svc_get "$svc" CONTEXT)"
+    project=$(svc_project "$svc")
+    dockerfile=$(svc_get "$svc" DOCKERFILE)
+    if [[ -n "$project" && ! -f "$source_code_dir/$project" && ! -f "$context/$project" ]]; then
+      log_error "Error: $svc's project not found: $project"
+      log_error "Set $( [[ "$svc" == web ]] && echo PROJECT || echo "$(svc_key "$svc")_PROJECT") in apps/${args[APP_NAME]}/env/app.env, relative to the repository root."
       exit 1
-  fi
+    fi
+    if [[ -n "$dockerfile" && ! -f "$context/$dockerfile" ]]; then
+      log_error "Error: $svc's Dockerfile not found: $context/$dockerfile"
+      exit 1
+    fi
+  done
 
-  log_success "Project found at: $project_path"
+  log_success "Source ready: $source_code_dir ($(git -C "$source_code_dir" rev-parse --short HEAD))"
 }

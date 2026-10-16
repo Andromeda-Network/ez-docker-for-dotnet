@@ -1,3 +1,4 @@
 prepare_app
 
-dotnet_compose logs -f --tail 200 "$(dotnet_service)"
+# shellcheck disable=SC2046 # one word per service
+dotnet_compose logs -f --tail 200 $(app_services)

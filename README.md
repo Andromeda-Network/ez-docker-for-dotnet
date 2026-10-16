@@ -120,6 +120,44 @@ docker build -f dotnet.Dockerfile --build-arg PROJECT=src/MyApp/MyApp.csproj -t 
 docker build -f dotnet.Dockerfile --build-arg PROJECT=src/MyApp/MyApp.csproj --target test .   # tests, inside the build
 ```
 
+## :jigsaw: Apps with several containers
+
+An app can be several services deployed together, such as a website, a background worker and an
+upload API from one repository. List them in `apps/<app>/env/app.env`, and configure each one with
+variables named after it:
+
+```bash
+SERVICES=web worker uploader
+
+PROJECT=Andropay.StranglerHost/Andropay.StranglerHost.csproj   # web (relative to its context)
+WEB_CONTEXT=APP                      # build context inside the repository (default: the root)
+WEB_DOCKERFILE=Andropay.StranglerHost/Dockerfile   # the app's own Dockerfile (default: ez's)
+WEB_HEALTH=/_host/health             # ez requests it from the host: works without curl in the image
+
+WORKER_PROJECT=Andropay.Worker/Andropay.Worker.csproj
+WORKER_CONTEXT=APP
+WORKER_HEALTH=none                   # no HTTP: "still running 10 s later" is enough
+
+UPLOADER_PROJECT=Uploader.WebApi.Core/Uploader.WebApi.Core.csproj
+UPLOADER_CONTEXT=APP
+UPLOADER_PORT=8091                   # publish on the host (web uses APP_PORT)
+UPLOADER_HEALTH=/
+```
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `<SVC>_PROJECT` | The `.csproj`, relative to the build context (web: `PROJECT`) | – |
+| `<SVC>_CONTEXT` | Build context inside the repository | the repository root |
+| `<SVC>_DOCKERFILE` | Dockerfile, relative to the context | `dotnet.Dockerfile` |
+| `<SVC>_IMAGE` | Image mode: the image name without tag | `APP_IMAGE`'s name, plus `-<service>` |
+| `<SVC>_PORT` | Host port for the service's 8080 (web: `APP_PORT`) | not published |
+| `<SVC>_HEALTH` | empty: the image's `HEALTHCHECK`; `/path`: an HTTP probe from the host; `none`: running is enough | empty |
+
+**How the services are handled:**
+- **Compose file:** `ez` generates it for each environment (`env/generated/compose.<env>.yml`). Anything the variables don't cover, such as shared volumes, extra environment or `depends_on`, goes in `apps/<app>/compose.override.yml`, applied on top (see `template/compose.override.example.yml`).
+- **Containers:** they're named `<app>_<env>` for `web` and `<app>_<env>_<service>` for the others, and all join the shared network.
+- **One unit:** a deploy builds or pulls **every** service, runs the migrations once, starts them all, and waits for each. If any one isn't up, **all of them** roll back. In image mode, CI pushes one image per service with the same tag.
+
 ## :gear: CI/CD (GitHub Actions)
 
 Examples are in `.github.example/workflows`. Copy them to your app repository's `.github/workflows`.
@@ -159,7 +197,7 @@ on `127.0.0.1` only: `ssh -L 81:127.0.0.1:81 <server>`, then http://localhost:81
 | `./ez shared start\|stop\|restart\|down` | Starts, stops, restarts or removes the shared containers. |
 | `./ez dotnet new` | Sets up a new .NET app in `apps/<app>`. |
 | `./ez dotnet deploy <app> <env> [--tag TAG]` | Builds (or pulls `TAG`), creates the database, migrates, starts, health-checks, rolls back if unhealthy. |
-| `./ez dotnet start\|stop\|restart <app> <env>` | Starts, stops or restarts the app's container (`--update`: pull the source first, dev). |
+| `./ez dotnet start\|stop\|restart <app> <env>` | Starts, stops or restarts the app's containers (`--update`: pull the source first, dev). |
 | `./ez dotnet down <app> <env>` | Removes the environment's containers (its storage stays). |
 | `./ez dotnet logs <app> <env>` | Follows the app's logs. |
 | `./ez dotnet status <app> <env>` | Shows the containers and the deployed version. |

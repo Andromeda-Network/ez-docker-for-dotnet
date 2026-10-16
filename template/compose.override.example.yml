@@ -1,0 +1,13 @@
+# Optional: copy to apps/<app>/compose.override.yml for what SERVICES' variables don't cover.
+# ez applies it on top of the compose file it generates for each environment
+# (apps/<app>/env/generated/compose.<env>.yml), so name services as in SERVICES.
+# Relative paths resolve against apps/<app>.
+services:
+  web:
+    volumes:
+      # Shared files between services, e.g. uploads the worker also reads:
+      - ./storage-${APP_ENV}/uploads:/app/uploads
+  worker:
+    volumes:
+      - ./storage-${APP_ENV}/uploads:/app/uploads
+    depends_on: [ web ]
