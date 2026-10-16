@@ -1,8 +1,23 @@
-.git
-.idea
-.github
-.editorconfig
-.env.example
-storage/app
-vendor
-node_modules
+# Copy to the root of your .NET repository (next to the .sln). `ez` adds it to its checkouts.
+# Never send secrets or build output into the build context.
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/node_modules/
+**/TestResults/
+.git/
+.github/
+**/.env
+**/*.env
+**/appsettings.*.Local.json
+**/secrets.json
+**/*.pfx
+**/*.p12
+**/*.key
+**/Dockerfile*
+**/compose*.yml
+**/docker-compose*.yml
+**/*.Dockerfile

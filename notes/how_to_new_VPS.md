@@ -3,7 +3,7 @@
 3. currently there is a bug in nginx-pm https://github.com/NginxProxyManager/nginx-proxy-manager/pull/4262
 4. manually edit your proxy host conf file, should look sth like this
 ```
-map $http_x_forwarded_proto $laravel_proto {
+map $http_x_forwarded_proto $forwarded_proto {
     default $scheme;
     ~. $http_x_forwarded_proto;
 }
@@ -61,8 +61,8 @@ listen [::]:443 ssl http2;
   location / {
  
     proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Scheme $laravel_proto;
-    proxy_set_header X-Forwarded-Proto  $laravel_proto;
+    proxy_set_header X-Forwarded-Scheme $forwarded_proto;
+    proxy_set_header X-Forwarded-Proto  $forwarded_proto;
     proxy_set_header X-Forwarded-For    $remote_addr;
     proxy_set_header X-Real-IP          $remote_addr;
     proxy_pass       http://androcrm_dev:80;

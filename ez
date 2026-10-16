@@ -17,7 +17,7 @@ version_command() {
 
 # :command.usage
 ez_usage() {
-  printf "ez - easy to setup, robust and production ready environment for Laravel using Docker, Docker Compose and bash script.\n\n"
+  printf "ez - easy to setup, robust and production ready environment for .NET (ASP.NET Core) apps using Docker, Docker Compose and bash script.\n\n"
 
   printf "%s\n" "Usage:"
   printf "  ez COMMAND\n"
@@ -26,9 +26,9 @@ ez_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
-  printf "  %s   Docker Commands\n" "docker "
-  printf "  %s   Shared containers Commands\n" "shared "
-  printf "  %s   Laravel containers Commands\n" "laravel"
+  printf "  %s   Docker Commands\n" "docker"
+  printf "  %s   Shared containers Commands\n" "shared"
+  printf "  %s   .NET (ASP.NET Core) app commands\n" "dotnet"
   echo
 
   # :command.long_usage
@@ -47,7 +47,10 @@ ez_usage() {
     # :command.usage_examples
     printf "%s\n" "Examples:"
     printf "  ez docker install\n"
-    printf "  ez d i\n"
+    printf "  ez shared deploy\n"
+    printf "  ez dotnet new\n"
+    printf "  ez dotnet deploy myapp production --tag sha-1a2b3c4d5e6f\n"
+    printf "  ez n d myapp test\n"
     echo
 
   fi
@@ -304,245 +307,408 @@ ez_shared_down_usage() {
 }
 
 # :command.usage
-ez_laravel_usage() {
-  printf "ez laravel - Laravel containers Commands\n\n"
-  printf "Alias: l\n"
-  echo
-
-  printf "%s\n" "Usage:"
-  printf "  ez laravel COMMAND\n"
-  printf "  ez laravel [COMMAND] --help | -h\n"
-  echo
-  # :command.usage_commands
-  printf "%s\n" "Commands:"
-  printf "  %s   build and start Laravel containers\n" "deploy "
-  printf "  %s   start Laravel containers\n" "start  "
-  printf "  %s   stop Laravel containers\n" "stop   "
-  printf "  %s   restart Laravel containers\n" "restart"
-  printf "  %s   remove Laravel containers\n" "down   "
-  printf "  %s   setup a new Laravel application\n" "new    "
-  echo
-
-  # :command.long_usage
-  if [[ -n "$long_usage" ]]; then
-    # :command.usage_options
-    printf "%s\n" "Options:"
-
-    # :command.usage_fixed_flags
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-  fi
-}
-
-# :command.usage
-ez_laravel_deploy_usage() {
-  printf "ez laravel deploy - build and start Laravel containers\n\n"
-  printf "Alias: d\n"
-  echo
-
-  printf "%s\n" "Usage:"
-  printf "  ez laravel deploy APP_NAME APP_ENV\n"
-  printf "  ez laravel deploy --help | -h\n"
-  echo
-
-  # :command.long_usage
-  if [[ -n "$long_usage" ]]; then
-    # :command.usage_options
-    printf "%s\n" "Options:"
-
-    # :command.usage_fixed_flags
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    # :command.usage_args
-    printf "%s\n" "Arguments:"
-
-    # :argument.usage
-    printf "  %s\n" "APP_NAME"
-    printf "    Laravel app name\n"
-    echo
-
-    # :argument.usage
-    printf "  %s\n" "APP_ENV"
-    printf "    Laravel app environment\n"
-    printf "    %s\n" "Allowed: dev, test, staging, production"
-    echo
-
-  fi
-}
-
-# :command.usage
-ez_laravel_start_usage() {
-  printf "ez laravel start - start Laravel containers\n\n"
-  printf "Alias: s\n"
-  echo
-
-  printf "%s\n" "Usage:"
-  printf "  ez laravel start APP_NAME APP_ENV [OPTIONS]\n"
-  printf "  ez laravel start --help | -h\n"
-  echo
-
-  # :command.long_usage
-  if [[ -n "$long_usage" ]]; then
-    # :command.usage_options
-    printf "%s\n" "Options:"
-
-    # :command.usage_flags
-    # :flag.usage
-    printf "  %s\n" "--update, -u"
-    printf "    update the source code before starting the container\n"
-    echo
-
-    # :command.usage_fixed_flags
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    # :command.usage_args
-    printf "%s\n" "Arguments:"
-
-    # :argument.usage
-    printf "  %s\n" "APP_NAME"
-    printf "    Laravel app name\n"
-    echo
-
-    # :argument.usage
-    printf "  %s\n" "APP_ENV"
-    printf "    Laravel app environment\n"
-    printf "    %s\n" "Allowed: dev, test, staging, production"
-    echo
-
-  fi
-}
-
-# :command.usage
-ez_laravel_stop_usage() {
-  printf "ez laravel stop - stop Laravel containers\n\n"
-
-  printf "%s\n" "Usage:"
-  printf "  ez laravel stop APP_NAME APP_ENV\n"
-  printf "  ez laravel stop --help | -h\n"
-  echo
-
-  # :command.long_usage
-  if [[ -n "$long_usage" ]]; then
-    # :command.usage_options
-    printf "%s\n" "Options:"
-
-    # :command.usage_fixed_flags
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    # :command.usage_args
-    printf "%s\n" "Arguments:"
-
-    # :argument.usage
-    printf "  %s\n" "APP_NAME"
-    printf "    Laravel app name\n"
-    echo
-
-    # :argument.usage
-    printf "  %s\n" "APP_ENV"
-    printf "    Laravel app environment\n"
-    printf "    %s\n" "Allowed: dev, test, staging, production"
-    echo
-
-  fi
-}
-
-# :command.usage
-ez_laravel_restart_usage() {
-  printf "ez laravel restart - restart Laravel containers\n\n"
-  printf "Alias: r\n"
-  echo
-
-  printf "%s\n" "Usage:"
-  printf "  ez laravel restart APP_NAME APP_ENV [OPTIONS]\n"
-  printf "  ez laravel restart --help | -h\n"
-  echo
-
-  # :command.long_usage
-  if [[ -n "$long_usage" ]]; then
-    # :command.usage_options
-    printf "%s\n" "Options:"
-
-    # :command.usage_flags
-    # :flag.usage
-    printf "  %s\n" "--update, -u"
-    printf "    update the source code before restarting the container\n"
-    echo
-
-    # :command.usage_fixed_flags
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    # :command.usage_args
-    printf "%s\n" "Arguments:"
-
-    # :argument.usage
-    printf "  %s\n" "APP_NAME"
-    printf "    Laravel app name\n"
-    echo
-
-    # :argument.usage
-    printf "  %s\n" "APP_ENV"
-    printf "    Laravel app environment\n"
-    printf "    %s\n" "Allowed: dev, test, staging, production"
-    echo
-
-  fi
-}
-
-# :command.usage
-ez_laravel_down_usage() {
-  printf "ez laravel down - remove Laravel containers\n\n"
-
-  printf "%s\n" "Usage:"
-  printf "  ez laravel down APP_NAME APP_ENV\n"
-  printf "  ez laravel down --help | -h\n"
-  echo
-
-  # :command.long_usage
-  if [[ -n "$long_usage" ]]; then
-    # :command.usage_options
-    printf "%s\n" "Options:"
-
-    # :command.usage_fixed_flags
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    # :command.usage_args
-    printf "%s\n" "Arguments:"
-
-    # :argument.usage
-    printf "  %s\n" "APP_NAME"
-    printf "    Laravel app name\n"
-    echo
-
-    # :argument.usage
-    printf "  %s\n" "APP_ENV"
-    printf "    Laravel app environment\n"
-    printf "    %s\n" "Allowed: dev, test, staging, production"
-    echo
-
-  fi
-}
-
-# :command.usage
-ez_laravel_new_usage() {
-  printf "ez laravel new - setup a new Laravel application\n\n"
+ez_dotnet_usage() {
+  printf "ez dotnet - .NET (ASP.NET Core) app commands\n\n"
   printf "Alias: n\n"
   echo
 
   printf "%s\n" "Usage:"
-  printf "  ez laravel new\n"
-  printf "  ez laravel new --help | -h\n"
+  printf "  ez dotnet COMMAND\n"
+  printf "  ez dotnet [COMMAND] --help | -h\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "Commands:"
+  printf "  %s   build or pull, migrate, start and health-check a .NET app; rolls back if it is unhealthy\n" "deploy  "
+  printf "  %s   start .NET containers\n" "start   "
+  printf "  %s   stop .NET containers\n" "stop    "
+  printf "  %s   restart .NET containers\n" "restart "
+  printf "  %s   remove .NET containers\n" "down    "
+  printf "  %s   follow a .NET app's logs\n" "logs    "
+  printf "  %s   show a .NET app's containers and its deployed version\n" "status  "
+  printf "  %s   run the app's EF Core migrations bundle\n" "migrate "
+  printf "  %s   image mode, redeploy an earlier image tag\n" "rollback"
+  printf "  %s   set up a new .NET application\n" "new     "
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_deploy_usage() {
+  printf "ez dotnet deploy - build or pull, migrate, start and health-check a .NET app; rolls back if it is unhealthy\n\n"
+  printf "Alias: d\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet deploy APP_NAME APP_ENV [OPTIONS]\n"
+  printf "  ez dotnet deploy --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--tag, -t TAG"
+    printf "    image mode only, the image tag to deploy (CI passes sha-<commit>); overrides\n    APP_IMAGE's tag\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_start_usage() {
+  printf "ez dotnet start - start .NET containers\n\n"
+  printf "Alias: s\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet start APP_NAME APP_ENV [OPTIONS]\n"
+  printf "  ez dotnet start --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--update, -u"
+    printf "    dev only, update the source code before starting the container\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_stop_usage() {
+  printf "ez dotnet stop - stop .NET containers\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet stop APP_NAME APP_ENV\n"
+  printf "  ez dotnet stop --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_restart_usage() {
+  printf "ez dotnet restart - restart .NET containers\n\n"
+  printf "Alias: r\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet restart APP_NAME APP_ENV [OPTIONS]\n"
+  printf "  ez dotnet restart --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--update, -u"
+    printf "    dev only, update the source code before restarting the container\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_down_usage() {
+  printf "ez dotnet down - remove .NET containers\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet down APP_NAME APP_ENV\n"
+  printf "  ez dotnet down --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_logs_usage() {
+  printf "ez dotnet logs - follow a .NET app's logs\n\n"
+  printf "Alias: l\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet logs APP_NAME APP_ENV\n"
+  printf "  ez dotnet logs --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_status_usage() {
+  printf "ez dotnet status - show a .NET app's containers and its deployed version\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet status APP_NAME APP_ENV\n"
+  printf "  ez dotnet status --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_migrate_usage() {
+  printf "ez dotnet migrate - run the app's EF Core migrations bundle\n\n"
+  printf "Alias: m\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet migrate APP_NAME APP_ENV\n"
+  printf "  ez dotnet migrate --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_rollback_usage() {
+  printf "ez dotnet rollback - image mode, redeploy an earlier image tag\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet rollback APP_NAME APP_ENV TAG\n"
+  printf "  ez dotnet rollback --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    # :command.usage_options
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "APP_NAME"
+    printf "    .NET app name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "APP_ENV"
+    printf "    .NET app environment\n"
+    printf "    %s\n" "Allowed: dev, test, staging, production"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "TAG"
+    printf "    the image tag to go back to (see \`ez dotnet status\`)\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+ez_dotnet_new_usage() {
+  printf "ez dotnet new - set up a new .NET application\n\n"
+  printf "Alias: n\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  ez dotnet new\n"
+  printf "  ez dotnet new --help | -h\n"
   echo
 
   # :command.long_usage
@@ -716,10 +882,12 @@ assign_port() {
 
 # src/lib/check_containers.sh
 check_containers() {
-    log_header "Checking shared containers health before building the Laravel container."
+    log_header "Checking shared containers health before deploying the app."
     local containers=("$@")
     local retries=4
     local delay=10
+    # Local: the callers have variables of these names (dotnet deploy's $container).
+    local container attempt i
 
     for container in "${containers[@]}"; do
         for attempt in $(seq 1 $((retries + 1))); do
@@ -751,23 +919,14 @@ check_containers() {
     done
 }
 
-# src/lib/create_docker_env.sh
-create_docker_env() {
-  cat <<EOL > "$DOCKER_ENV_PATH"
-  SHARED_NETWORK_NAME=$SHARED_NETWORK_NAME
-
-  PORT_NGINX_PM=$PORT_NGINX_PM
-  PORT_PMA=$PORT_PMA
-
-  DB_HOST=mysql8
-  DB_PORT=3306
-  DB_ROOT_PASSWORD=$DB_ROOT_PASSWORD
-EOL
-
-  log_success "Saved docker environment variables to $DOCKER_ENV_PATH"
-}
-
 # src/lib/create_new_database_and_user.sh
+# Create the app environment's database and its own login on the shared database server
+# (DB_ENGINE in docker/docker.env: mssql, postgres, or none to skip). Idempotent: an existing
+# database is kept, an existing login gets the password from the env file again.
+#
+# Names reach SQL as identifiers, so they are validated first (letters, digits, _ only).
+# Passwords travel as environment variables: `docker exec -e NAME` (no value) copies NAME from
+# this process's environment, so no password appears on a command line (`ps`), host or container.
 create_new_database_and_user() {
 
   if [ "$#" -ne 3 ]; then
@@ -775,60 +934,159 @@ create_new_database_and_user() {
       return 1
   fi
 
-  # Set variables
-  NEW_DB_NAME=$1
-  NEW_USER_NAME=$2
-  NEW_USER_PASSWORD=$3
+  local db_name=$1 user_name=$2 user_password=$3
+  local engine="${DB_ENGINE:-mssql}"
 
-  log_header "Creating Database: $NEW_DB_NAME with User: $NEW_USER_NAME"
-
-  MYSQL_USER="root"
-  # $DB_HOST & DB_ROOT_PASSWORD is read from docker.env
-
-  # Check if database exists by querying INFORMATION_SCHEMA.SCHEMATA
-  DB_EXISTS=$(docker exec -i $DB_HOST mysql -u"$MYSQL_USER" -p"$DB_ROOT_PASSWORD" -e \
-      "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$NEW_DB_NAME';" --skip-column-names 2>/dev/null)
-
-  if [[ "$DB_EXISTS" != "1" ]]; then
-    # Database doesn't exist, so create it
-    if ! docker exec -i $DB_HOST mysql -u"$MYSQL_USER" -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE \`$NEW_DB_NAME\`;"; then
-      log_error "Failed to create database '$NEW_DB_NAME'"
-      exit 1
-    else
-      log_success "Created Database: $NEW_DB_NAME"
-    fi
-  else
-    log "Database: $NEW_DB_NAME Already Exists"
+  if [[ "$engine" == "none" ]]; then
+    log_info "DB_ENGINE=none: not creating a database."
+    return 0
   fi
 
-  # NOTE: the DB user is granted host '%' (connect from any address) on purpose.
-  # This "just works" on every Docker network setup, which keeps the tool usable
-  # for beginners. Restricting the host (e.g. to '172.%.%.%', the default Docker
-  # bridge subnet) is more secure, but silently breaks the DB connection whenever
-  # Docker assigns a container an address outside that range (custom networks,
-  # non-default subnets) — a hard-to-debug trap for new users. If you run this on
-  # an exposed/shared MySQL and want to lock it down, narrow the '%' below to your
-  # actual container subnet.
-  # Check if user exists
-  if docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "SELECT user FROM mysql.user WHERE user='$NEW_USER_NAME';" --skip-column-names -B | grep -q "$NEW_USER_NAME"; then
-      log_warning "User '$NEW_USER_NAME' already exists. Updating password."
-      # Update user password
-      if ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "ALTER USER '$NEW_USER_NAME'@'%' IDENTIFIED BY '$NEW_USER_PASSWORD';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON \`$NEW_DB_NAME\`.* TO '$NEW_USER_NAME'@'%';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"; then
-        log_error "Failed to update password and/or grant privileges for user '$NEW_USER_NAME'"
+  if [[ ! "$db_name" =~ ^[A-Za-z_][A-Za-z0-9_]{0,63}$ || ! "$user_name" =~ ^[A-Za-z_][A-Za-z0-9_]{0,63}$ ]]; then
+    log_error "Database and user names must be letters, digits and _ (got '$db_name', '$user_name')."
+    exit 1
+  fi
+  if [[ -z "$user_password" || "$user_password" == *"'"* || "$user_password" == *"]"* ]]; then
+    log_error "DB_PASSWORD for $user_name must be set and must not contain ' or ]."
+    exit 1
+  fi
+
+  log_header "Creating Database: $db_name with User: $user_name ($engine)"
+
+  case "$engine" in
+    mssql)
+      # sqlcmd reads $(DB), $(USR) and $(PWD_) from its environment, and the sa password from
+      # SQLCMDPASSWORD.
+      if ! SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" DB="$db_name" USR="$user_name" PWD_="$user_password" \
+          docker exec -i -e SQLCMDPASSWORD -e DB -e USR -e PWD_ \
+          mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -b <<'SQL'
+IF DB_ID(N'$(DB)') IS NULL EXEC(N'CREATE DATABASE [$(DB)]');
+IF SUSER_ID(N'$(USR)') IS NULL
+    EXEC(N'CREATE LOGIN [$(USR)] WITH PASSWORD = N''$(PWD_)'', CHECK_POLICY = OFF, DEFAULT_DATABASE = [$(DB)]');
+ELSE
+    EXEC(N'ALTER LOGIN [$(USR)] WITH PASSWORD = N''$(PWD_)''');
+EXEC(N'USE [$(DB)];
+IF USER_ID(N''$(USR)'') IS NULL CREATE USER [$(USR)] FOR LOGIN [$(USR)];
+ALTER ROLE db_owner ADD MEMBER [$(USR)];');
+SQL
+      then
+        log_error "Failed to create database '$db_name' or login '$user_name' on mssql."
         exit 1
       fi
-      log_success "User: '$NEW_USER_NAME' password updated for DB: $NEW_DB_NAME with full privileges";
-  else
-      # Create user and grant privileges
-      if ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "CREATE USER '$NEW_USER_NAME'@'%' IDENTIFIED BY '$NEW_USER_PASSWORD';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON \`$NEW_DB_NAME\`.* TO '$NEW_USER_NAME'@'%';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"; then
-        log_error "Failed to create and grant privileges for user '$NEW_USER_NAME'"
+      ;;
+    postgres)
+      # The new role's password is a psql variable set from the script itself (\getenv), not argv.
+      if ! PGPASSWORD="$POSTGRES_PASSWORD" EZ_DB="$db_name" EZ_USR="$user_name" EZ_PWD="$user_password" \
+          docker exec -i -e PGPASSWORD -e EZ_DB -e EZ_USR -e EZ_PWD postgres \
+          psql -v ON_ERROR_STOP=1 -U postgres <<'SQL'
+\getenv db EZ_DB
+\getenv usr EZ_USR
+\getenv pwd EZ_PWD
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'usr', :'pwd') WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'usr') \gexec
+SELECT format('ALTER ROLE %I PASSWORD %L', :'usr', :'pwd') \gexec
+SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'usr') WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
+SQL
+      then
+        log_error "Failed to create database '$db_name' or role '$user_name' on postgres."
         exit 1
       fi
-      log_success "User: '$NEW_USER_NAME' created for DB: $NEW_DB_NAME with full privileges";
+      ;;
+    *)
+      log_error "Unknown DB_ENGINE '$engine' (mssql, postgres or none)."
+      exit 1
+      ;;
+  esac
+
+  log_success "Database $db_name ready; $user_name owns it."
+}
+
+# src/lib/deploy_state.sh
+# The image tag last deployed to an environment, so a failed deploy can roll back to it.
+deployed_tag_file() { echo "apps/$1/env/generated/$2.deployed"; }
+
+read_deployed_tag() { cat "$(deployed_tag_file "$1" "$2")" 2>/dev/null || true; }
+
+record_deployed_tag() { echo "$3" > "$(deployed_tag_file "$1" "$2")"; }
+
+# Wait for a container's health check (the app's /healthz). A container without a health check
+# counts once it is running.
+wait_for_healthy() {
+  local container=$1 timeout=${2:-180} waited=0 state
+  log_info "Waiting for $container to become healthy (up to ${timeout}s) ..."
+  while (( waited < timeout )); do
+    state=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || echo missing)
+    case "$state" in
+      healthy|running) return 0 ;;
+      unhealthy|exited|dead) (( waited > 10 )) && return 1 ;;
+    esac
+    sleep 3
+    waited=$((waited + 3))
+  done
+  return 1
+}
+
+# An image reference without its tag: registry.example.com:5000/group/app:v1 -> .../group/app
+# (a ':' after the last '/' is the tag; a registry port before it stays).
+image_name() {
+  local image=$1
+  if [[ "${image##*/}" == *:* ]]; then image=${image%:*}; fi
+  echo "$image"
+}
+
+image_tag() {
+  local image=$1
+  if [[ "${image##*/}" == *:* ]]; then echo "${image##*:}"; else echo latest; fi
+}
+
+# src/lib/dotnet_compose.sh
+# docker compose for one environment of one app. Each environment is its own compose project
+# (<app>_<env>), so a command for test can never touch production's containers.
+#
+# Needs: app_dir, merged_env_path (merge_app_envs) and the loaded env (load_app_envs).
+dotnet_compose() {
+  local file="$app_dir/compose-dotnet.yml"
+  if [[ "${DEPLOY_MODE:-build}" == "image" && "${args[APP_ENV]}" != "dev" && "${args[APP_ENV]}" != "test" ]]; then
+    file="$app_dir/compose-dotnet-image.yml"
+  fi
+  local project
+  project=$(echo "${args[APP_NAME]}_${args[APP_ENV]}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '_')
+  docker compose -p "$project" -f "$file" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" "$@"
+}
+
+# The compose service and container of an environment.
+dotnet_service() { echo "dotnet-${args[APP_ENV]}"; }
+dotnet_container() { echo "${args[APP_NAME]}_${args[APP_ENV]}"; }
+
+# Validate APP_NAME/APP_ENV, find the app, merge and load its environment.
+prepare_app() {
+  if ! validate_app_name "${args[APP_NAME]}"; then
+    log_error "Invalid application name: ${args[APP_NAME]}"
+    log_error "Application names must contain only letters, numbers, hyphens and underscores (64 at most)."
+    exit 1
+  fi
+  if ! validate_environment "${args[APP_ENV]}"; then
+    log_error "Invalid environment: ${args[APP_ENV]} (dev, test, staging or production)"
+    exit 1
+  fi
+
+  app_dir="apps/${args[APP_NAME]}"
+  if [[ ! -d "$app_dir" ]]; then
+    log_error "Application directory not found: $app_dir"
+    log_error "The application '${args[APP_NAME]}' has not been initialized. Create it first:"
+    log_error "  ./ez dotnet new"
+    exit 1
+  fi
+  if [[ ! -f "$app_dir/env/${args[APP_ENV]}.env" ]]; then
+    log_error "No ${args[APP_ENV]} environment for ${args[APP_NAME]} ($app_dir/env/${args[APP_ENV]}.env)."
+    exit 1
+  fi
+
+  merged_env_path=$(merge_app_envs "$app_dir" "${args[APP_ENV]}")
+  load_app_envs "$app_dir" "${args[APP_ENV]}" >/dev/null
+  DEPLOY_MODE="${DEPLOY_MODE:-build}"
+  if [[ "$DEPLOY_MODE" != "build" && "$DEPLOY_MODE" != "image" ]]; then
+    log_error "Invalid DEPLOY_MODE: '$DEPLOY_MODE' (expected 'build' or 'image') in $app_dir/env/app.env"
+    exit 1
   fi
 }
 
@@ -899,23 +1157,53 @@ validate_environment() {
   esac
 }
 
-# Validate PHP version (must be one of the officially supported versions)
-# Args: $1 - PHP version (e.g. 8.3)
+# Validate .NET version (the SDK/runtime image tag the Dockerfile builds on)
+# Args: $1 - .NET version (e.g. 10.0)
 # Returns: 0 if valid, 1 if invalid
-validate_php_version() {
+validate_dotnet_version() {
   local version="$1"
 
   case "$version" in
-    8.2|8.3|8.4|8.5)
+    8.0|9.0|10.0)
       return 0
       ;;
     *)
       if [ "${TEST_MODE:-0}" != "1" ]; then
-        echo "[ERROR] Invalid PHP version: $version. Must be one of: 8.2, 8.3, 8.4, 8.5" >&2
+        echo "[ERROR] Invalid .NET version: $version. Must be one of: 8.0, 9.0, 10.0" >&2
       fi
       return 1
       ;;
   esac
+}
+
+# Validate the project path: relative, inside the repository, a .csproj
+# Args: $1 - path, e.g. src/MyApp/MyApp.csproj
+# Returns: 0 if valid, 1 if invalid
+validate_project_path() {
+  local path="$1"
+
+  if [[ "$path" =~ ^[A-Za-z0-9_./-]+\.csproj$ && "$path" != /* && "$path" != *..* ]]; then
+    return 0
+  fi
+  if [ "${TEST_MODE:-0}" != "1" ]; then
+    echo "[ERROR] Invalid project path: $path. Use a relative path to a .csproj, e.g. src/MyApp/MyApp.csproj" >&2
+  fi
+  return 1
+}
+
+# Validate a Docker image tag
+# Args: $1 - tag
+# Returns: 0 if valid, 1 if invalid
+validate_image_tag() {
+  local tag="$1"
+
+  if [[ "$tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+    return 0
+  fi
+  if [ "${TEST_MODE:-0}" != "1" ]; then
+    echo "[ERROR] Invalid image tag: $tag" >&2
+  fi
+  return 1
 }
 
 # Validate Git URL format
@@ -983,6 +1271,20 @@ is_port_in_use() {
   fi
 }
 
+# src/lib/load_app_envs.sh
+load_app_envs() {
+  local app_dir=$1
+  local app_env=$2
+
+  docker_env_path="docker/docker.env"
+  app_env_path="$app_dir/env/app.env"
+  merged_env_path="$app_dir/env/generated/$app_env.env"
+
+  load_env "$docker_env_path"
+  load_env "$app_env_path"
+  load_env "$merged_env_path"
+}
+
 # src/lib/load_env.sh
 load_env() {
   local filePath="${1:-.env}"
@@ -997,25 +1299,15 @@ load_env() {
     CLEANED_LINE=$(echo "$LINE" | awk '{$1=$1};1' | tr -d '\r')
 
     if [[ $CLEANED_LINE != '#'* ]] && [[ $CLEANED_LINE == *'='* ]]; then
-      export "$CLEANED_LINE"
+      # Only names a shell can hold. .NET settings like Logging__LogLevel__Default are fine; a
+      # name with '-' or '.' still reaches the container through env_file, just not this shell.
+      if [[ "${CLEANED_LINE%%=*}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+        export "$CLEANED_LINE"
+      fi
     fi
   done < "$filePath"
 
   log "loaded env file: $filePath"
-}
-
-# src/lib/load_laravel_envs.sh
-load_laravel_envs() {
-  local app_dir=$1
-  local app_env=$2
-
-  docker_env_path="docker/docker.env"
-  app_env_path="$app_dir/env/app.env"
-  merged_env_path="$app_dir/env/generated/$app_env.env"
-
-  load_env "$docker_env_path"
-  load_env "$app_env_path"
-  load_env "$merged_env_path"
 }
 
 # src/lib/log.sh
@@ -1093,6 +1385,24 @@ log_warning() {
   echo -e "${YELLOW}-- $1${NORMAL}"
 }
 
+# src/lib/merge_app_envs.sh
+merge_app_envs() {
+  local app_dir=$1
+  local app_env=$2
+
+  docker_env_path="docker/docker.env"
+  app_env_path="$app_dir/env/app.env"
+  override_env_path="$app_dir/env/$app_env.env"
+  merged_env_path="$app_dir/env/generated/$app_env.env"
+
+  mkdir -p "$app_dir/env/generated"
+  merge_envs "$merged_env_path" "$docker_env_path" "$app_env_path" "$override_env_path"
+  # The merged file is the app's environment (env_file) and holds its secrets.
+  chmod 600 "$merged_env_path"
+
+  echo "$merged_env_path"
+}
+
 # src/lib/merge_envs.sh
 merge_envs() {
   if [ "$#" -lt 3 ]; then
@@ -1117,27 +1427,13 @@ merge_envs() {
 
   # Mask host-side plumbing out of the app's .env. These configure ez itself — the registry it
   # pulls from, the database superuser, the source repo — and the application has no use for any
-  # of them; REGISTRY_TOKEN especially has no business inside a Laravel environment.
+  # of them; REGISTRY_TOKEN especially has no business inside an app's environment.
   # TODO improve this part
-  merged_content=$(echo "$merged_content" | grep -Ev '^(SHARED_NETWORK_NAME|DB_ROOT_PASSWORD|GIT_URL|REGISTRY_HOST|REGISTRY_USER|REGISTRY_TOKEN)=')
+  # The shared services' own superuser passwords (SQL Server sa, Postgres, Redis, Seq) are ez's,
+  # not the app's: each app gets its own database login (create_new_database_and_user).
+  merged_content=$(echo "$merged_content" | grep -Ev '^(SHARED_NETWORK_NAME|SHARED_PROFILES|DB_ROOT_PASSWORD|MSSQL_SA_PASSWORD|POSTGRES_PASSWORD|SEQ_ADMIN_PASSWORD|GIT_URL|REGISTRY_HOST|REGISTRY_USER|REGISTRY_TOKEN)=')
 
   echo "$merged_content" > "$output"
-}
-
-# src/lib/merge_laravel_envs.sh
-merge_laravel_envs() {
-  local app_dir=$1
-  local app_env=$2
-
-  laravel_env_path="$app_dir/env/laravel.env"
-  docker_env_path="docker/docker.env"
-  app_env_path="$app_dir/env/app.env"
-  override_env_path="$app_dir/env/$app_env.env"
-  merged_env_path="$app_dir/env/generated/$app_env.env"
-
-  merge_envs "$merged_env_path" "$laravel_env_path" "$docker_env_path" "$app_env_path" "$override_env_path"
-
-  echo "$merged_env_path"
 }
 
 # src/lib/read_multi_line_input.sh
@@ -1193,7 +1489,7 @@ setup_environment() {
   local app_name=$1
   local environment=$2
 
-  local branch_name db_database db_username generated_password db_password app_debug
+  local branch_name db_database db_username generated_password db_password aspnet_env app_port db_host connection
 
   if [ "$environment" == "production" ]; then
     branch_name="main"
@@ -1203,76 +1499,90 @@ setup_environment() {
 
   branch_name=$(ask_question "Enter the ${environment} branch name" "$branch_name")
 
-  db_database=$(ask_question "Enter the ${environment} database name" "${app_name}_${environment}")
-  db_username=$(ask_question "Enter the ${environment} database username" "${app_name}_${environment}_user")
-  generated_password=$(generate_password 20)
+  # SQL identifiers: the app name's '-' becomes '_'.
+  db_database=$(ask_question "Enter the ${environment} database name" "${app_name//-/_}_${environment}")
+  db_username=$(ask_question "Enter the ${environment} database username" "${app_name//-/_}_${environment}_user")
+  generated_password=$(generate_password 24)
   db_password=$(ask_question "Enter the $db_username's password" "$generated_password")
 
-  if [[ "$environment" == "dev" ]]; then
-    app_debug=true
-    app_port=$(assign_port "dev" 7000)  # Directly capture the correct port
-    opcache_validate_timestamps=1  # Dev: check for file changes
-  elif [[ "$environment" == "test" ]]; then
-    app_debug=true
-    app_port=$(assign_port "test" 8000)  # Directly capture the correct port
-    opcache_validate_timestamps=1  # Test: check for file changes
-  else
-    app_debug=false
-    opcache_validate_timestamps=0  # Production/Staging: maximum performance
-  fi
+  app_port=""
+  case "$environment" in
+    dev)        aspnet_env=Development; app_port=$(assign_port "dev" 7000) ;;
+    test)       aspnet_env=Test;        app_port=$(assign_port "test" 8000) ;;
+    staging)    aspnet_env=Staging ;;
+    production) aspnet_env=Production ;;
+  esac
 
-  #FIXME do something for APP_URL
+  case "${DB_ENGINE:-mssql}" in
+    postgres) connection="Host=postgres;Database=$db_database;Username=$db_username;Password=$db_password" ;;
+    none)     connection="" ;;
+    *)        connection="Server=mssql;Database=$db_database;User Id=$db_username;Password=$db_password;TrustServerCertificate=True;MultipleActiveResultSets=True" ;;
+  esac
+
   cat <<EOL > "apps/$app_name/env/$environment.env"
 GIT_BRANCH=$branch_name
 APP_ENV=$environment
-APP_DEBUG=$app_debug
-APP_URL=$environment.my.url
+ASPNETCORE_ENVIRONMENT=$aspnet_env
 APP_PORT=$app_port
 DB_DATABASE=$db_database
 DB_USERNAME=$db_username
 DB_PASSWORD=$db_password
-OPCACHE_VALIDATE_TIMESTAMPS=$opcache_validate_timestamps
+# The app's settings: .NET reads nested keys with __ (Section__Key).
+ConnectionStrings__Default=$connection
+ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD}
+Seq__ServerUrl=http://seq:5341
 EOL
+  chmod 600 "apps/$app_name/env/$environment.env"
 
   log_info "created apps/$app_name/env/$environment.env"
+}
+
+# src/lib/shared_compose.sh
+# docker compose for the shared services, with the optional ones in SHARED_PROFILES
+# (docker/docker.env: e.g. "mssql seq") and the database in DB_ENGINE.
+shared_compose() {
+  local profiles=() p
+  for p in ${DB_ENGINE:-mssql} ${SHARED_PROFILES:-}; do
+    [[ "$p" == none ]] && continue
+    profiles+=(--profile "$p")
+  done
+  docker compose -p ez-shared -f docker/compose-shared.yml --env-file docker/docker.env "${profiles[@]}" "$@"
 }
 
 # src/lib/update_source_code.sh
 update_source_code() {
   log_info "updating source code ..."
   local source_code_dir="apps/${args[APP_NAME]}/src-${args[APP_ENV]}"
-  local laravel_path="${source_code_dir}/${LARAVEL_ROOT}"
+  local project_path="${source_code_dir}/${PROJECT}"
 
-  # If the source code directory exists, update the repo
-  #TODO add a force clone config somewhere so user can choose to always clone instead of updating the repo?
-  if [ -d "$source_code_dir" ]; then
-      log "Updating existing $source_code_dir folder"
-      cd "$source_code_dir" || exit 1
-      git pull origin "$GIT_BRANCH"
-      if [ $? -ne 0 ]; then
-          log_error "Error: Git pull failed."
-          exit 1
+  if [ -d "$source_code_dir/.git" ]; then
+      log "Updating existing $source_code_dir folder ($GIT_BRANCH)"
+      # fetch + reset, not pull: the checkout is a build input, never edited on the server
+      # (dev's is, and keeps pull so local edits are not thrown away).
+      if [[ "${args[APP_ENV]}" == "dev" ]]; then
+          git -C "$source_code_dir" pull origin "$GIT_BRANCH" || { log_error "Error: Git pull failed."; exit 1; }
+      else
+          git -C "$source_code_dir" fetch --depth 1 origin "$GIT_BRANCH" \
+            && git -C "$source_code_dir" reset --hard "origin/$GIT_BRANCH" \
+            || { log_error "Error: Git fetch failed."; exit 1; }
       fi
-      cd - || exit 1
   else
-      # If the source code directory doesn't exist, clone the repo
       log "Cloning new $source_code_dir folder"
-      git clone --depth 1 -b "$GIT_BRANCH" "$GIT_URL" "$source_code_dir"
-      # Check if cloning was successful
-      if [ $? -ne 0 ]; then
-          log_error "Error: Git cloning failed."
-          exit 1
-      fi
+      git clone --depth 1 -b "$GIT_BRANCH" "$GIT_URL" "$source_code_dir" || { log_error "Error: Git cloning failed."; exit 1; }
   fi
 
-  # Verify Laravel exists
-  if [ ! -f "$laravel_path/artisan" ]; then
-      log_error "Error: Laravel not found at $laravel_path"
-      log_error "LARAVEL_ROOT is set to: '${LARAVEL_ROOT}' in apps/${args[APP_NAME]}/env/app.env"
+  # The build context is the repository root; keep bin/obj, .git and env files out of it.
+  if [ ! -f "$source_code_dir/.dockerignore" ]; then
+      cp "apps/${args[APP_NAME]}/.dockerignore" "$source_code_dir/.dockerignore"
+  fi
+
+  if [ ! -f "$project_path" ]; then
+      log_error "Error: project not found at $project_path"
+      log_error "PROJECT is set to: '${PROJECT}' in apps/${args[APP_NAME]}/env/app.env"
       exit 1
   fi
 
-  log_success "Laravel found at: $laravel_path"
+  log_success "Project found at: $project_path"
 }
 
 # src/lib/user_exists.sh
@@ -1345,32 +1655,58 @@ ez_shared_deploy_command() {
     log_warning "$DOCKER_ENV_PATH not found."
     log_info "Creating new '$DOCKER_ENV_PATH' file."
 
-    PORT_NGINX_PM=$(ask_question "Enter the Nginx Proxy Manager port" "81")
-    PORT_PMA=$(ask_question "Enter the PhpMyAdmin port" "6001")
-    GENERATED_PASSWORD=$(generate_password 24)
-    DB_ROOT_PASSWORD=$(ask_question "Enter the database root password" "$GENERATED_PASSWORD" )
     SHARED_NETWORK_NAME=$(ask_question "Enter the docker network name" "ez-shared-network")
+    PORT_NGINX_PM=$(ask_question "Enter the Nginx Proxy Manager admin port (bound to 127.0.0.1)" "81")
+    while true; do
+      DB_ENGINE=$(ask_question "Database server for the apps (mssql, postgres or none)" "mssql")
+      [[ "$DB_ENGINE" =~ ^(mssql|postgres|none)$ ]] && break
+      log_error "Choose mssql, postgres or none."
+    done
+    SHARED_PROFILES=$(ask_question "Optional shared services (seq portainer, space-separated, or empty)" "seq")
 
+    # generate_password's alphabet (letters, digits, @%&*) is safe unquoted in env files and
+    # connection strings. SQL Server's policy wants mixed case and a digit: the suffix guarantees it.
+    umask 077
     cat <<EOL > "$DOCKER_ENV_PATH"
 SHARED_NETWORK_NAME=$SHARED_NETWORK_NAME
+DB_ENGINE=$DB_ENGINE
+SHARED_PROFILES=$SHARED_PROFILES
 
 PORT_NGINX_PM=$PORT_NGINX_PM
-PORT_PMA=$PORT_PMA
+PORT_SEQ=5380
+PORT_PORTAINER=9443
 
-DB_HOST=mysql8
-DB_PORT=3306
-DB_ROOT_PASSWORD=$DB_ROOT_PASSWORD
+MSSQL_SA_PASSWORD=$(generate_password 24)Aa1
+# Express is free and licensed for production (limited); Developer is not for production.
+MSSQL_PID=Express
+POSTGRES_PASSWORD=$(generate_password 24)
+REDIS_PASSWORD=$(generate_password 24)
+SEQ_ADMIN_PASSWORD=$(generate_password 20)
+
+# Pinned versions (see .env.example)
+NGINX_PM_VERSION=2.11.1
+MSSQL_VERSION=2022-latest
+POSTGRES_VERSION=17.2-alpine
+REDIS_VERSION=7.4.1-alpine
+SEQ_VERSION=2024.3
+PORTAINER_VERSION=2.19.4
+
+# Image mode: the registry apps are pulled from (both empty: anonymous pulls).
+REGISTRY_HOST=ghcr.io
+REGISTRY_USER=
+REGISTRY_TOKEN=
 EOL
+    umask 022
 
-    log_success "Saved docker environment variables to $DOCKER_ENV_PATH"
+    log_success "Saved docker environment variables to $DOCKER_ENV_PATH (passwords generated; keep it private)"
+    load_env "$DOCKER_ENV_PATH"
   fi
 
   # Check if the network already exists
   if docker network inspect "$SHARED_NETWORK_NAME" >/dev/null 2>&1; then
     log "Network '$SHARED_NETWORK_NAME' already exists"
   else
-    docker network create "$SHARED_NETWORK_NAME"
-    if [ $? -eq 0 ]; then
+    if docker network create "$SHARED_NETWORK_NAME"; then
       log_success "Network '$SHARED_NETWORK_NAME' created"
     else
       log_error "Failed to create network '$SHARED_NETWORK_NAME'"
@@ -1380,10 +1716,15 @@ EOL
 
   log_header "Running Docker Compose for shared services"
 
-  docker compose -f docker/compose-shared.yml --env-file "docker/docker.env" up --build -d
-  if [ $? -ne 0 ]; then
+  if ! shared_compose up -d --remove-orphans; then
     log_error "Failed to run Docker Compose"
     exit 1
+  fi
+
+  log_success "Shared services are up (database: ${DB_ENGINE}; optional: ${SHARED_PROFILES:-none})."
+  log_info "Nginx Proxy Manager admin: ssh -L ${PORT_NGINX_PM}:127.0.0.1:${PORT_NGINX_PM} <server>, then http://localhost:${PORT_NGINX_PM}"
+  if [[ " ${SHARED_PROFILES} " == *" seq "* ]]; then
+    log_info "Seq (logs and errors): ssh -L ${PORT_SEQ}:127.0.0.1:${PORT_SEQ} <server>, then http://localhost:${PORT_SEQ} (admin / SEQ_ADMIN_PASSWORD)"
   fi
 
 }
@@ -1396,7 +1737,7 @@ ez_shared_start_command() {
 
   load_env "docker/docker.env"
 
-  docker compose -f docker/compose-shared.yml start
+  shared_compose start
 
 }
 
@@ -1408,7 +1749,7 @@ ez_shared_stop_command() {
 
   load_env "docker/docker.env"
 
-  docker compose -f docker/compose-shared.yml stop
+  shared_compose stop
 
 }
 
@@ -1420,7 +1761,7 @@ ez_shared_restart_command() {
 
   load_env "docker/docker.env"
 
-  docker compose -f docker/compose-shared.yml restart
+  shared_compose restart
 
 }
 
@@ -1432,229 +1773,313 @@ ez_shared_down_command() {
 
   load_env "docker/docker.env"
 
-  docker compose -f docker/compose-shared.yml  down
+  shared_compose down
 
 }
 
 # :command.function
-ez_laravel_deploy_command() {
+ez_dotnet_deploy_command() {
 
-  # src/laravel_deploy_command.sh
+  # src/dotnet_deploy_command.sh
   #inspect_args
 
-  # Validate application name
-  if ! validate_app_name "${args[APP_NAME]}"; then
-    log_error "Invalid application name: ${args[APP_NAME]}"
-    log_error "Application names must:"
-    log_error "  - Contain only letters, numbers, hyphens, and underscores"
-    log_error "  - Be 64 characters or less"
-    log_error "Example: my-laravel-app"
-    exit 1
-  fi
+  prepare_app
 
-  # Validate environment name
-  if ! validate_environment "${args[APP_ENV]}"; then
-    log_error "Invalid environment: ${args[APP_ENV]}"
-    log_error "Environment must be one of: dev, test, staging, production"
-    exit 1
-  fi
+  log_header "Preparing to deploy ${args[APP_NAME]} (.NET) in ${args[APP_ENV]} mode"
 
-  log_header "Preparing to deploy Laravel in ${args[APP_ENV]} mode"
-
-  # Check Docker daemon availability
-  if ! docker info >/dev/null 2>&1; then
-    log_error "Cannot connect to Docker daemon"
-    log_error "Please ensure:"
-    log_error "  1. Docker is installed and running"
-    log_error "  2. Docker service is started: sudo systemctl start docker"
-    log_error "  3. Your user has Docker permissions: sudo usermod -aG docker \$USER"
-    exit 1
-  fi
-
-  app_dir="apps/${args[APP_NAME]}"
-  if [[ ! -d "$app_dir" ]]; then
-      log_error "Application directory not found: $app_dir"
-      log_error "The application '${args[APP_NAME]}' has not been initialized."
-      log_error "Please create the application first:"
-      log_error "  sudo ./ez laravel new"
-      exit 1
-  fi
-
-  merged_env_path=$(merge_laravel_envs "$app_dir" "${args[APP_ENV]}")
-  load_laravel_envs "$app_dir" "${args[APP_ENV]}"
-
-  DEPLOY_MODE="${DEPLOY_MODE:-build}"
-
-  if [[ "$DEPLOY_MODE" != "build" && "$DEPLOY_MODE" != "image" ]]; then
-    log_error "Invalid DEPLOY_MODE: '$DEPLOY_MODE' (expected 'build' or 'image')"
-    log_error "Set it in apps/${args[APP_NAME]}/env/app.env; omit it to keep building on this host."
-    exit 1
-  fi
+  env_name="${args[APP_ENV]}"
+  service=$(dotnet_service)
 
   if [[ "$DEPLOY_MODE" == "image" ]]; then
-    # The image already contains the application, so this host needs no source, build toolchain or
-    # private-package credentials; CI held those when it built it.
-    if [[ "${args[APP_ENV]}" == "dev" || "${args[APP_ENV]}" == "test" ]]; then
-      log_error "DEPLOY_MODE=image does not apply to ${args[APP_ENV]}."
-      log_error "dev mounts live source and test builds the tree it is testing; neither runs a fixed artifact."
+    # The image already contains the application, so this host needs no source or SDK; CI built
+    # and tested it.
+    if [[ "$env_name" == "dev" || "$env_name" == "test" ]]; then
+      log_error "DEPLOY_MODE=image does not apply to $env_name."
+      log_error "dev runs live source and test builds the tree it is testing; neither runs a fixed artifact."
       exit 1
     fi
     if [[ -z "$APP_IMAGE" ]]; then
-      log_error "DEPLOY_MODE=image but APP_IMAGE is empty."
-      log_error "Set APP_IMAGE to the full image reference, e.g."
-      log_error "  APP_IMAGE=registry.example.com/group/app:<tag>"
+      log_error "DEPLOY_MODE=image but APP_IMAGE is empty. Set it in $app_dir/env/app.env, e.g."
+      log_error "  APP_IMAGE=ghcr.io/your-org/your-app:latest"
       exit 1
     fi
-    # Naming the missing template beats docker compose's own error for a missing file.
-    if [[ ! -f "$app_dir/compose-laravel-image.yml" ]]; then
-      log_error "DEPLOY_MODE=image but $app_dir/compose-laravel-image.yml is missing."
-      log_error "This app predates image mode. Copy the template in:"
-      log_error "  cp template/compose-laravel-image.yml $app_dir/"
-      log_error "  cp template/common-laravel.yml $app_dir/"
-      exit 1
+    if [[ -n "${args[--tag]}" ]]; then
+      if ! validate_image_tag "${args[--tag]}"; then
+        log_error "Invalid --tag: ${args[--tag]}"
+        exit 1
+      fi
+      APP_IMAGE="$(image_name "$APP_IMAGE"):${args[--tag]}"
     fi
+    MIGRATIONS_IMAGE="$(image_name "$APP_IMAGE")-migrations:$(image_tag "$APP_IMAGE")"
+    export APP_IMAGE MIGRATIONS_IMAGE
     log_info "Image mode — deploying $APP_IMAGE (no source checkout, no build on this host)."
   else
+    if [[ -n "${args[--tag]}" ]]; then
+      log_error "--tag is for DEPLOY_MODE=image; build mode builds GIT_BRANCH's head."
+      exit 1
+    fi
+    if ! validate_project_path "$PROJECT"; then
+      log_error "Set PROJECT in $app_dir/env/app.env to your .csproj, relative to the repository root."
+      exit 1
+    fi
     update_source_code
   fi
 
-  containers=("nginx-pm" "mysql8")
+  containers=("nginx-pm")
+  if [[ "${DB_ENGINE:-mssql}" != "none" ]]; then
+    containers+=("${DB_ENGINE:-mssql}")
+  fi
   check_containers "${containers[@]}"
 
-  create_new_database_and_user "$DB_DATABASE" "$DB_USERNAME" "$DB_PASSWORD"
+  if [[ "${DB_ENGINE:-mssql}" != "none" && -n "$DB_DATABASE" ]]; then
+    create_new_database_and_user "$DB_DATABASE" "$DB_USERNAME" "$DB_PASSWORD"
+  fi
 
-  if [[ "${args[APP_ENV]}" == "dev" ]]; then
-    cp "$merged_env_path" "$app_dir/src-dev/${LARAVEL_ROOT}.env"
+  # dev: `dotnet watch` on the live checkout, nothing to build, migrate or roll back.
+  if [[ "$env_name" == "dev" ]]; then
     chown -R "$OWNER_USER_NAME:$OWNER_GROUP_NAME" "$app_dir/src-dev"
+    log_header "Running Docker Compose for ${args[APP_NAME]} dev"
+    if ! dotnet_compose up -d "$service"; then
+      log_error "Failed to start ${args[APP_NAME]} (dev). Logs: ./ez dotnet logs ${args[APP_NAME]} dev"
+      exit 1
+    fi
+    log_success "Running $(dotnet_container): dotnet watch on $app_dir/src-dev, http://<your_ip>:$APP_PORT"
+    exit 0
   fi
 
-  log_header "Running Docker Compose for Laravel ${args[APP_ENV]}"
-  if [[ "$DEPLOY_MODE" == "image" ]]; then
-    registry_login "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_TOKEN"
-
-    # The published runtime keeps www-data at its distribution uid so one image serves every host,
-    # so the mounted storage has to match the container rather than the host user. It runs before
-    # the container starts because the entrypoint writes logs and caches on its first breath.
-    storage_dir="$app_dir/storage-${args[APP_ENV]}"
-    mkdir -p "$storage_dir/volume" "$storage_dir/logs"
-    chown -R "${IMAGE_USER_ID:-33}:${IMAGE_GROUP_ID:-33}" "$storage_dir"
-    compose_file="$app_dir/compose-laravel-image.yml"
-    # Pull first so a registry or tag problem fails before the running container is touched.
-    docker compose -f "$compose_file" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" pull \
-      && docker compose -f "$compose_file" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" up -d
-  else
-    docker compose -f "$app_dir/compose-laravel.yml" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" up --build -d
-  fi
-
-  if [ $? -ne 0 ]; then
-    log_error "Failed to start Docker containers for ${args[APP_NAME]} (${args[APP_ENV]})"
-    log_error "Troubleshooting steps:"
-    log_error "  1. Check Docker logs: docker compose -f $app_dir/compose-laravel.yml logs"
-    log_error "  2. Verify Docker is running: docker ps"
-    log_error "  3. Check for port conflicts: lsof -i :$APP_PORT"
-    log_error "  4. Review environment file: $merged_env_path"
+  # The data volume belongs to the image's app user (uid 1654 in Microsoft's .NET images), not the
+  # host's; it must exist with that owner before the container's first write.
+  storage_dir="$app_dir/storage-$env_name"
+  mkdir -p "$storage_dir"
+  if ! chown -R "${IMAGE_USER_ID:-1654}:${IMAGE_GROUP_ID:-1654}" "$storage_dir"; then
+    log_error "Cannot give $storage_dir to the container's user (uid ${IMAGE_USER_ID:-1654}): run ez with sudo."
     exit 1
   fi
 
-  if [[ "${args[APP_ENV]}" != "dev" && "$DEPLOY_MODE" != "image" ]]; then
-    # Build mode remaps www-data to OWNER_USER_ID, making the host owner and the container the same
-    # uid. Image mode has already matched the container's uid above.
-    chown -R "$OWNER_USER_NAME:$OWNER_GROUP_NAME" "$app_dir/storage-${args[APP_ENV]}"
+  previous_tag=$(read_deployed_tag "${args[APP_NAME]}" "$env_name")
+  container=$(dotnet_container)
+
+  log_header "Preparing the new version of ${args[APP_NAME]} ($env_name)"
+  if [[ "$DEPLOY_MODE" == "image" ]]; then
+    registry_login "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_TOKEN"
+    # Pull first, so a registry or tag problem fails before the running container is touched.
+    if ! dotnet_compose pull "$service"; then
+      log_error "Could not pull $APP_IMAGE."
+      exit 1
+    fi
+    if [[ "${MIGRATIONS:-false}" == "true" ]] && ! dotnet_compose --profile migrate pull migrate; then
+      log_error "Could not pull $MIGRATIONS_IMAGE (CI publishes it when MIGRATIONS=true)."
+      exit 1
+    fi
+    new_tag=$(image_tag "$APP_IMAGE")
+  else
+    # Keep the running image as <app>:<env>-previous, so an unhealthy build can be swapped back.
+    if docker image inspect "${args[APP_NAME]}:$env_name" >/dev/null 2>&1; then
+      docker tag "${args[APP_NAME]}:$env_name" "${args[APP_NAME]}:$env_name-previous"
+    fi
+    if ! dotnet_compose build "$service"; then
+      log_error "Build failed; the running version was not touched."
+      exit 1
+    fi
+    if [[ "${MIGRATIONS:-false}" == "true" ]] && ! dotnet_compose --profile migrate build migrate; then
+      log_error "Building the migrations bundle failed; the running version was not touched."
+      exit 1
+    fi
+    new_tag="git-$(git -C "$app_dir/src-$env_name" rev-parse --short HEAD)"
   fi
 
-  log_success "Server running on [${args[APP_NAME]}_${args[APP_ENV]}] container with 'inner' port 80."
-  log_info "You can connect your website to a domain using Nginx Proxy Manager at [<your_ip>:$PORT_NGINX_PM]."
-
-  if [[ "${args[APP_ENV]}" == "dev" || "${args[APP_ENV]}" == "test" ]]; then
-    if [[ -n "$APP_PORT" ]]; then
-      log_success "Server running on [http://<your_ip>:$APP_PORT]."
-    else
-      log_error "APP_PORT not set for ${args[APP_ENV]} environment"
-      log_error "Please add APP_PORT to: apps/${args[APP_NAME]}/env/${args[APP_ENV]}.env"
-      log_error "Example: APP_PORT=7000"
+  if [[ "${MIGRATIONS:-false}" == "true" ]]; then
+    if [[ -n "${PRE_MIGRATION_COMMAND:-}" ]]; then
+      log_info "Pre-migration command (e.g. a database backup): $PRE_MIGRATION_COMMAND"
+      if ! bash -c "$PRE_MIGRATION_COMMAND"; then
+        log_error "Pre-migration command failed; nothing was migrated or restarted."
+        exit 1
+      fi
+    fi
+    log_info "Applying EF Core migrations"
+    if ! dotnet_compose --profile migrate run --rm migrate; then
+      log_error "Migrations failed; the running version was not touched."
       exit 1
     fi
   fi
 
+  log_header "Running Docker Compose for ${args[APP_NAME]} $env_name"
+  if ! dotnet_compose up -d --no-build "$service"; then
+    log_error "Failed to start Docker containers for ${args[APP_NAME]} ($env_name)"
+    log_error "  Logs:    ./ez dotnet logs ${args[APP_NAME]} $env_name"
+    log_error "  Env:     $merged_env_path"
+    exit 1
+  fi
+
+  if wait_for_healthy "$container"; then
+    record_deployed_tag "${args[APP_NAME]}" "$env_name" "$new_tag"
+    log_success "Server running on [$container] container with 'inner' port 8080 ($new_tag)."
+  else
+    docker logs --tail 60 "$container" 2>&1 || true
+    log_error "$container did not become healthy (GET /healthz)."
+    if [[ "$DEPLOY_MODE" == "image" && -n "$previous_tag" && "$previous_tag" != "$new_tag" ]]; then
+      log_warning "Rolling back to $previous_tag"
+      APP_IMAGE="$(image_name "$APP_IMAGE"):$previous_tag"
+      export APP_IMAGE
+      if dotnet_compose up -d --no-build "$service" && wait_for_healthy "$container"; then
+        log_warning "Rolled back to $previous_tag."
+      else
+        log_error "The rollback is not healthy either."
+      fi
+    elif [[ "$DEPLOY_MODE" == "build" ]] && docker image inspect "${args[APP_NAME]}:$env_name-previous" >/dev/null 2>&1; then
+      log_warning "Rolling back to the previous build"
+      docker tag "${args[APP_NAME]}:$env_name-previous" "${args[APP_NAME]}:$env_name"
+      if dotnet_compose up -d --no-build "$service" && wait_for_healthy "$container"; then
+        log_warning "Rolled back to the previous build."
+      else
+        log_error "The rollback is not healthy either."
+      fi
+    fi
+    exit 1
+  fi
+
+  if [[ "$env_name" == "test" ]]; then
+    if [[ -n "$APP_PORT" ]]; then
+      log_success "Server running on [http://<your_ip>:$APP_PORT]."
+    else
+      log_error "APP_PORT not set for test. Add it to $app_dir/env/test.env, e.g. APP_PORT=8000"
+      exit 1
+    fi
+  else
+    log_info "Connect a domain in Nginx Proxy Manager: forward to $container, port 8080 (admin UI: ssh -L ${PORT_NGINX_PM:-81}:127.0.0.1:${PORT_NGINX_PM:-81} <server>)."
+  fi
+
 }
 
 # :command.function
-ez_laravel_start_command() {
+ez_dotnet_start_command() {
 
-  # src/laravel_start_command.sh
-  app_dir="apps/${args[APP_NAME]}"
-  merged_env_path=$(merge_laravel_envs "$app_dir" "${args[APP_ENV]}")
-  load_laravel_envs "$app_dir" "${args[APP_ENV]}"
-
-  if [[ "${args[APP_ENV]}" == "dev" ]]; then
-    cp "$merged_env_path" "$app_dir/src-dev/${LARAVEL_ROOT}.env"
-    chown -R "$OWNER_USER_NAME:$OWNER_GROUP_NAME" "$app_dir/src-dev"
-  fi
+  # src/dotnet_start_command.sh
+  prepare_app
 
   if [[ "${args[APP_ENV]}" == "dev" && -n "${args[--update]}" ]]; then
     update_source_code
   fi
 
-  docker compose -f "$app_dir/compose-laravel.yml" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" start
+  dotnet_compose start "$(dotnet_service)"
 
 }
 
 # :command.function
-ez_laravel_stop_command() {
+ez_dotnet_stop_command() {
 
-  # src/laravel_stop_command.sh
-  app_dir="apps/${args[APP_NAME]}"
-  merged_env_path=$(merge_laravel_envs "$app_dir" "${args[APP_ENV]}")
-  load_laravel_envs "$app_dir" "${args[APP_ENV]}"
+  # src/dotnet_stop_command.sh
+  prepare_app
 
-  docker compose -f "$app_dir/compose-laravel.yml" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" stop
+  dotnet_compose stop "$(dotnet_service)"
 
 }
 
 # :command.function
-ez_laravel_restart_command() {
+ez_dotnet_restart_command() {
 
-  # src/laravel_restart_command.sh
-  app_dir="apps/${args[APP_NAME]}"
-  merged_env_path=$(merge_laravel_envs "$app_dir" "${args[APP_ENV]}")
-  load_laravel_envs "$app_dir" "${args[APP_ENV]}"
-
-  if [[ "${args[APP_ENV]}" == "dev" ]]; then
-    cp "$merged_env_path" "$app_dir/src-dev/${LARAVEL_ROOT}.env"
-    chown -R "$OWNER_USER_NAME:$OWNER_GROUP_NAME" "$app_dir/src-dev"
-  fi
+  # src/dotnet_restart_command.sh
+  prepare_app
 
   if [[ "${args[APP_ENV]}" == "dev" && -n "${args[--update]}" ]]; then
     update_source_code
   fi
 
-  docker compose -f "$app_dir/compose-laravel.yml" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" restart
+  dotnet_compose restart "$(dotnet_service)"
 
 }
 
 # :command.function
-ez_laravel_down_command() {
+ez_dotnet_down_command() {
 
-  # src/laravel_down_command.sh
-  app_dir="apps/${args[APP_NAME]}"
-  merged_env_path=$(merge_laravel_envs "$app_dir" "${args[APP_ENV]}")
-  load_laravel_envs "$app_dir" "${args[APP_ENV]}"
+  # src/dotnet_down_command.sh
+  prepare_app
 
-  docker compose -f "$app_dir/compose-laravel.yml" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" down
+  # Removes this environment's containers only (its own compose project); storage-<env> stays.
+  dotnet_compose down
 
 }
 
 # :command.function
-ez_laravel_new_command() {
+ez_dotnet_logs_command() {
 
-  # src/laravel_new_command.sh
-  DELIMITER="exit"
-  PROMPT=$(get_prompt_text "Please paste the content of your .env file, " "type '$DELIMITER' on a new line and press enter to finish")
-  echo -e "$PROMPT"
-  ENV_CONTENT=$(read_multi_line_input "$DELIMITER")
+  # src/dotnet_logs_command.sh
+  prepare_app
 
-  APP_NAME=$(echo "$ENV_CONTENT" | grep -oP '^APP_NAME=\K.*')
-  APP_NAME=$(ask_question "Enter the application name" "$APP_NAME")
+  dotnet_compose logs -f --tail 200 "$(dotnet_service)"
+
+}
+
+# :command.function
+ez_dotnet_status_command() {
+
+  # src/dotnet_status_command.sh
+  prepare_app
+
+  dotnet_compose ps
+  log_info "Deploy mode: $DEPLOY_MODE"
+  log_info "Deployed version: $(read_deployed_tag "${args[APP_NAME]}" "${args[APP_ENV]}" | grep . || echo 'none yet')"
+
+}
+
+# :command.function
+ez_dotnet_migrate_command() {
+
+  # src/dotnet_migrate_command.sh
+  prepare_app
+
+  if [[ "$DEPLOY_MODE" == "image" && "${args[APP_ENV]}" != "dev" && "${args[APP_ENV]}" != "test" ]]; then
+    # The migrations image matching the deployed version.
+    deployed=$(read_deployed_tag "${args[APP_NAME]}" "${args[APP_ENV]}")
+    MIGRATIONS_IMAGE="$(image_name "$APP_IMAGE")-migrations:${deployed:-$(image_tag "$APP_IMAGE")}"
+    export MIGRATIONS_IMAGE
+    registry_login "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_TOKEN"
+    dotnet_compose --profile migrate pull migrate
+  else
+    dotnet_compose --profile migrate build migrate
+  fi
+
+  log_info "Applying EF Core migrations to ${args[APP_NAME]} (${args[APP_ENV]})"
+  dotnet_compose --profile migrate run --rm migrate
+
+}
+
+# :command.function
+ez_dotnet_rollback_command() {
+
+  # src/dotnet_rollback_command.sh
+  prepare_app
+
+  if [[ "$DEPLOY_MODE" != "image" ]]; then
+    log_error "Rollback to a tag needs DEPLOY_MODE=image. In build mode, deploy an earlier commit"
+    log_error "(a failed build-mode deploy already swaps the previous build back by itself)."
+    exit 1
+  fi
+
+  if ! validate_image_tag "${args[TAG]}"; then
+    log_error "Invalid tag: ${args[TAG]}"
+    exit 1
+  fi
+
+  # The same path as a deploy: pull, (migrate), start, health-check, and undo if unhealthy.
+  args[--tag]="${args[TAG]}"
+  ez_dotnet_deploy_command
+
+}
+
+# :command.function
+ez_dotnet_new_command() {
+
+  # src/dotnet_new_command.sh
+  DOCKER_ENV_PATH="docker/docker.env"
+  if [[ ! -f "$DOCKER_ENV_PATH" ]]; then
+    log_error "Set up the shared services first (they decide the database and Redis password):"
+    log_error "  ./ez shared deploy"
+    exit 1
+  fi
+  load_env "$DOCKER_ENV_PATH" >/dev/null
+
+  APP_NAME=$(ask_question "Enter the application name" "")
 
   # Validate application name
   if ! validate_app_name "$APP_NAME"; then
@@ -1662,14 +2087,21 @@ ez_laravel_new_command() {
     log_error "Application names must:"
     log_error "  - Contain only letters, numbers, hyphens, and underscores"
     log_error "  - Be 64 characters or less"
-    log_error "Example: my-laravel-app"
+    log_error "Example: my-dotnet-app"
     exit 1
+  fi
+
+  APP_DIR="apps/$APP_NAME"
+
+  if [[ -d "$APP_DIR" ]]; then
+      log_error "Directory $APP_DIR already exists app_name must be unique."
+      exit 1
   fi
 
   while true; do
     # Set default suggestion - if current user is root, suggest ubuntu instead
     if [[ "$(whoami)" == "root" ]]; then
-      DEFAULT_USER="ubuntu"
+      DEFAULT_USER="${SUDO_USER:-ubuntu}"
     else
       DEFAULT_USER="$(whoami)"
     fi
@@ -1699,59 +2131,64 @@ ez_laravel_new_command() {
   OWNER_GROUP_NAME=$(id -gn "$OWNER_USER_NAME")
   OWNER_GROUP_ID=$(id -g "$OWNER_USER_NAME")
 
-  APP_DIR="apps/$APP_NAME"
-
-  if [[ -d "$APP_DIR" ]]; then
-      log_error "Directory $APP_DIR already exists app_name must be unique."
-      exit 1
-  fi
-
-  log "Creating $APP_DIR directory"
-  mkdir -p "$APP_DIR/env/generated"
-
-  log "saving .env file into $APP_DIR/env/laravel.env"
-  echo "$ENV_CONTENT" > "$APP_DIR/env/laravel.env"
-
   log_info "Git url examples:"
-  log "normal git url (you get prompted for authorization): https://github.com/MansourM/ez-docker-for-laravel.git"
-  log "or this format: https://<user>:<pass>@github.com/MansourM/ez-docker-for-laravel.git"
-  GIT_URL=$(ask_question "Enter the application git url" "https://github.com/MansourM/ez-docker-for-laravel-example.git")
+  log "normal git url (you get prompted for authorization): https://github.com/your-org/your-app.git"
+  log "or this format: https://<user>:<token>@github.com/your-org/your-app.git"
+  GIT_URL=$(ask_question "Enter the application git url" "https://github.com/your-org/your-app.git")
 
   # Validate Git URL
   if ! validate_git_url "$GIT_URL"; then
     log_error "Invalid Git URL format: $GIT_URL"
-    log_error "Git URLs must:"
-    log_error "  - End with .git"
-    log_error "  - Use https://, http://, git://, or git@ protocol"
-    log_error "Examples:"
-    log_error "  - https://github.com/user/repo.git"
-    log_error "  - git@github.com:user/repo.git"
+    log_error "Git URLs must end with .git and use https://, http://, git://, or git@"
     exit 1
   fi
 
-  log_info "Laravel root path (leave empty if Laravel is at repository root):"
-  log "Examples: src, src/api, apps/backend"
-  LARAVEL_ROOT=$(ask_question "Enter the path to Laravel root within the repository" "")
-
-  # Ensure LARAVEL_ROOT ends with / if not empty (for consistent path building)
-  if [[ -n "$LARAVEL_ROOT" && "$LARAVEL_ROOT" != */ ]]; then
-    LARAVEL_ROOT="${LARAVEL_ROOT}/"
-  fi
-
-  log_info "PHP version for this app (supported: 8.2, 8.3, 8.4, 8.5)"
+  log_info "The project to publish, relative to the repository root (the one with Program.cs)."
   while true; do
-    PHP_VERSION=$(ask_question "Enter the PHP version" "8.5")
-    if validate_php_version "$PHP_VERSION"; then
+    PROJECT=$(ask_question "Enter the project path" "src/$APP_NAME/$APP_NAME.csproj")
+    if validate_project_path "$PROJECT"; then
       break
     fi
-    log_error "Invalid PHP version: $PHP_VERSION. Must be one of: 8.2, 8.3, 8.4, 8.5"
   done
+
+  log_info ".NET version for this app (supported: 8.0, 9.0, 10.0)"
+  while true; do
+    DOTNET_VERSION=$(ask_question "Enter the .NET version" "10.0")
+    if validate_dotnet_version "$DOTNET_VERSION"; then
+      break
+    fi
+  done
+
+  log_info "Deploy mode for staging/production: 'build' builds on this host from git; 'image' pulls"
+  log "the image CI built and tested (recommended; see .github.example/workflows/release.yml)."
+  while true; do
+    DEPLOY_MODE=$(ask_question "Enter the deploy mode (build/image)" "image")
+    [[ "$DEPLOY_MODE" == "build" || "$DEPLOY_MODE" == "image" ]] && break
+    log_error "Deploy mode must be build or image."
+  done
+  APP_IMAGE=""
+  if [[ "$DEPLOY_MODE" == "image" ]]; then
+    APP_IMAGE=$(ask_question "Enter the image (registry/owner/name:tag)" "ghcr.io/your-org/$APP_NAME:latest")
+  fi
+
+  MIGRATIONS=$(ask_question "Run EF Core migrations on every deploy? (true/false)" "false")
+  [[ "$MIGRATIONS" == "true" ]] || MIGRATIONS=false
+
+  log "Creating $APP_DIR directory"
+  mkdir -p "$APP_DIR/env/generated"
 
   cat <<EOL > "$APP_DIR/env/app.env"
 APP_NAME=$APP_NAME
 GIT_URL=$GIT_URL
-LARAVEL_ROOT=$LARAVEL_ROOT
-PHP_VERSION=$PHP_VERSION
+PROJECT=$PROJECT
+# The project holding the DbContext and migrations, if not PROJECT.
+EF_PROJECT=
+DOTNET_VERSION=$DOTNET_VERSION
+DEPLOY_MODE=$DEPLOY_MODE
+APP_IMAGE=$APP_IMAGE
+MIGRATIONS=$MIGRATIONS
+# Runs on the host before migrations (e.g. a database backup); a failure stops the deploy.
+PRE_MIGRATION_COMMAND=
 OWNER_USER_NAME=$OWNER_USER_NAME
 OWNER_USER_ID=$OWNER_USER_ID
 OWNER_GROUP_NAME=$OWNER_GROUP_NAME
@@ -1760,41 +2197,27 @@ EOL
 
   log_info "created $APP_DIR/env/app.env"
 
-  SETUP_DEV_ENV=$(ask_question "Do you want to set up the dev environment?" "yes")
+  for environment in dev test staging production; do
+    default=yes
+    [[ "$environment" == "dev" ]] && default=no
+    answer=$(ask_question "Do you want to set up the $environment environment?" "$default")
+    if [[ "$answer" == "yes" || "$answer" == "y" ]]; then
+      setup_environment "$APP_NAME" "$environment"
+    fi
+  done
 
-  if [[ "$SETUP_DEV_ENV" == "yes" || "$SETUP_DEV_ENV" == "y" ]]; then
-    setup_environment "$APP_NAME" "dev"
-  fi
+  cp "template/dotnet.Dockerfile" "$APP_DIR/dotnet.Dockerfile"
+  cp "template/.dockerignore" "$APP_DIR/.dockerignore"
+  cp "template/common-dotnet.yml" "$APP_DIR/common-dotnet.yml"
+  cp "template/compose-dotnet.yml" "$APP_DIR/compose-dotnet.yml"
+  cp "template/compose-dotnet-image.yml" "$APP_DIR/compose-dotnet-image.yml"
 
-  SETUP_TEST_ENV=$(ask_question "Do you want to set up the test environment?" "yes")
+  chown -R "$OWNER_USER_NAME:$OWNER_GROUP_NAME" "$APP_DIR" 2>/dev/null || true
+  chmod 700 "$APP_DIR/env"
 
-  if [[ "$SETUP_TEST_ENV" == "yes" || "$SETUP_TEST_ENV" == "y" ]]; then
-    setup_environment "$APP_NAME" "test"
-  fi
-
-  SETUP_STAGING_ENV=$(ask_question "Do you want to set up the staging environment?" "yes")
-
-  if [[ "$SETUP_STAGING_ENV" == "yes" || "$SETUP_TEST_ENV" == "y" ]]; then
-    setup_environment "$APP_NAME" "staging"
-  fi
-
-  SETUP_STAGING_ENV=$(ask_question "Do you want to set up the production environment?" "yes")
-
-  if [[ "$SETUP_STAGING_ENV" == "yes" || "$SETUP_TEST_ENV" == "y" ]]; then
-    setup_environment "$APP_NAME" "production"
-  fi
-
-  cp -r "template/nginx" "$APP_DIR/nginx"
-  cp "template/entrypoint.sh" "$APP_DIR/entrypoint.sh"
-  cp "template/opcache.ini" "$APP_DIR/opcache.ini"
-  cp "template/php.ini" "$APP_DIR/php.ini"
-  cp "template/supervisor/supervisord.conf" "$APP_DIR/supervisord.conf"
-
-  cp "template/common-laravel.yml" "$APP_DIR/common-laravel.yml"
-  cp "template/laravel-dev.Dockerfile" "$APP_DIR/laravel-dev.Dockerfile"
-  cp "template/laravel.Dockerfile" "$APP_DIR/laravel.Dockerfile"
-  cp "template/compose-laravel.yml" "$APP_DIR/compose-laravel.yml"
-  cp "template/compose-laravel-image.yml" "$APP_DIR/compose-laravel-image.yml"
+  log_success "App $APP_NAME is set up in $APP_DIR."
+  log_info "Add your settings and secrets to $APP_DIR/env/<env>.env (Section__Key), then:"
+  log "  ./ez dotnet deploy $APP_NAME <env>"
 
 }
 
@@ -1844,10 +2267,10 @@ parse_requirements() {
       shift $#
       ;;
 
-    laravel | l)
-      action="laravel"
+    dotnet | n)
+      action="dotnet"
       shift
-      ez_laravel_parse_requirements "$@"
+      ez_dotnet_parse_requirements "$@"
       shift $#
       ;;
 
@@ -2446,7 +2869,7 @@ ez_shared_down_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_parse_requirements() {
+ez_dotnet_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2455,7 +2878,7 @@ ez_laravel_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_usage
+        ez_dotnet_usage
         exit
         ;;
 
@@ -2475,48 +2898,76 @@ ez_laravel_parse_requirements() {
     deploy | d)
       action="deploy"
       shift
-      ez_laravel_deploy_parse_requirements "$@"
+      ez_dotnet_deploy_parse_requirements "$@"
       shift $#
       ;;
 
     start | s)
       action="start"
       shift
-      ez_laravel_start_parse_requirements "$@"
+      ez_dotnet_start_parse_requirements "$@"
       shift $#
       ;;
 
     stop)
       action="stop"
       shift
-      ez_laravel_stop_parse_requirements "$@"
+      ez_dotnet_stop_parse_requirements "$@"
       shift $#
       ;;
 
     restart | r)
       action="restart"
       shift
-      ez_laravel_restart_parse_requirements "$@"
+      ez_dotnet_restart_parse_requirements "$@"
       shift $#
       ;;
 
     down)
       action="down"
       shift
-      ez_laravel_down_parse_requirements "$@"
+      ez_dotnet_down_parse_requirements "$@"
+      shift $#
+      ;;
+
+    logs | l)
+      action="logs"
+      shift
+      ez_dotnet_logs_parse_requirements "$@"
+      shift $#
+      ;;
+
+    status)
+      action="status"
+      shift
+      ez_dotnet_status_parse_requirements "$@"
+      shift $#
+      ;;
+
+    migrate | m)
+      action="migrate"
+      shift
+      ez_dotnet_migrate_parse_requirements "$@"
+      shift $#
+      ;;
+
+    rollback)
+      action="rollback"
+      shift
+      ez_dotnet_rollback_parse_requirements "$@"
       shift $#
       ;;
 
     new | n)
       action="new"
       shift
-      ez_laravel_new_parse_requirements "$@"
+      ez_dotnet_new_parse_requirements "$@"
       shift $#
       ;;
 
     # :command.command_fallback
     "")
-      ez_laravel_usage >&2
+      ez_dotnet_usage >&2
       exit 1
       ;;
 
@@ -2551,7 +3002,7 @@ ez_laravel_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_deploy_parse_requirements() {
+ez_dotnet_deploy_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2560,7 +3011,7 @@ ez_laravel_deploy_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_deploy_usage
+        ez_dotnet_deploy_usage
         exit
         ;;
 
@@ -2572,12 +3023,25 @@ ez_laravel_deploy_parse_requirements() {
   done
 
   # :command.command_filter
-  action="laravel deploy"
+  action="dotnet deploy"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+      # :flag.case
+      --tag | -t)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--tag']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--tag requires an argument: --tag, -t TAG" >&2
+          exit 1
+        fi
+        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
@@ -2607,13 +3071,13 @@ ez_laravel_deploy_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['APP_NAME']+x} ]]; then
-    printf "missing required argument: APP_NAME\nusage: ez laravel deploy APP_NAME APP_ENV\n" >&2
+    printf "missing required argument: APP_NAME\nusage: ez dotnet deploy APP_NAME APP_ENV [OPTIONS]\n" >&2
 
     exit 1
   fi
 
   if [[ -z ${args['APP_ENV']+x} ]]; then
-    printf "missing required argument: APP_ENV\nusage: ez laravel deploy APP_NAME APP_ENV\n" >&2
+    printf "missing required argument: APP_ENV\nusage: ez dotnet deploy APP_NAME APP_ENV [OPTIONS]\n" >&2
 
     exit 1
   fi
@@ -2627,7 +3091,7 @@ ez_laravel_deploy_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_start_parse_requirements() {
+ez_dotnet_start_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2636,7 +3100,7 @@ ez_laravel_start_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_start_usage
+        ez_dotnet_start_usage
         exit
         ;;
 
@@ -2648,7 +3112,7 @@ ez_laravel_start_parse_requirements() {
   done
 
   # :command.command_filter
-  action="laravel start"
+  action="dotnet start"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2690,13 +3154,13 @@ ez_laravel_start_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['APP_NAME']+x} ]]; then
-    printf "missing required argument: APP_NAME\nusage: ez laravel start APP_NAME APP_ENV [OPTIONS]\n" >&2
+    printf "missing required argument: APP_NAME\nusage: ez dotnet start APP_NAME APP_ENV [OPTIONS]\n" >&2
 
     exit 1
   fi
 
   if [[ -z ${args['APP_ENV']+x} ]]; then
-    printf "missing required argument: APP_ENV\nusage: ez laravel start APP_NAME APP_ENV [OPTIONS]\n" >&2
+    printf "missing required argument: APP_ENV\nusage: ez dotnet start APP_NAME APP_ENV [OPTIONS]\n" >&2
 
     exit 1
   fi
@@ -2710,7 +3174,7 @@ ez_laravel_start_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_stop_parse_requirements() {
+ez_dotnet_stop_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2719,7 +3183,7 @@ ez_laravel_stop_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_stop_usage
+        ez_dotnet_stop_usage
         exit
         ;;
 
@@ -2731,7 +3195,7 @@ ez_laravel_stop_parse_requirements() {
   done
 
   # :command.command_filter
-  action="laravel stop"
+  action="dotnet stop"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2766,13 +3230,13 @@ ez_laravel_stop_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['APP_NAME']+x} ]]; then
-    printf "missing required argument: APP_NAME\nusage: ez laravel stop APP_NAME APP_ENV\n" >&2
+    printf "missing required argument: APP_NAME\nusage: ez dotnet stop APP_NAME APP_ENV\n" >&2
 
     exit 1
   fi
 
   if [[ -z ${args['APP_ENV']+x} ]]; then
-    printf "missing required argument: APP_ENV\nusage: ez laravel stop APP_NAME APP_ENV\n" >&2
+    printf "missing required argument: APP_ENV\nusage: ez dotnet stop APP_NAME APP_ENV\n" >&2
 
     exit 1
   fi
@@ -2786,7 +3250,7 @@ ez_laravel_stop_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_restart_parse_requirements() {
+ez_dotnet_restart_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2795,7 +3259,7 @@ ez_laravel_restart_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_restart_usage
+        ez_dotnet_restart_usage
         exit
         ;;
 
@@ -2807,7 +3271,7 @@ ez_laravel_restart_parse_requirements() {
   done
 
   # :command.command_filter
-  action="laravel restart"
+  action="dotnet restart"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2849,13 +3313,13 @@ ez_laravel_restart_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['APP_NAME']+x} ]]; then
-    printf "missing required argument: APP_NAME\nusage: ez laravel restart APP_NAME APP_ENV [OPTIONS]\n" >&2
+    printf "missing required argument: APP_NAME\nusage: ez dotnet restart APP_NAME APP_ENV [OPTIONS]\n" >&2
 
     exit 1
   fi
 
   if [[ -z ${args['APP_ENV']+x} ]]; then
-    printf "missing required argument: APP_ENV\nusage: ez laravel restart APP_NAME APP_ENV [OPTIONS]\n" >&2
+    printf "missing required argument: APP_ENV\nusage: ez dotnet restart APP_NAME APP_ENV [OPTIONS]\n" >&2
 
     exit 1
   fi
@@ -2869,7 +3333,7 @@ ez_laravel_restart_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_down_parse_requirements() {
+ez_dotnet_down_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2878,7 +3342,7 @@ ez_laravel_down_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_down_usage
+        ez_dotnet_down_usage
         exit
         ;;
 
@@ -2890,7 +3354,7 @@ ez_laravel_down_parse_requirements() {
   done
 
   # :command.command_filter
-  action="laravel down"
+  action="dotnet down"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2925,13 +3389,13 @@ ez_laravel_down_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['APP_NAME']+x} ]]; then
-    printf "missing required argument: APP_NAME\nusage: ez laravel down APP_NAME APP_ENV\n" >&2
+    printf "missing required argument: APP_NAME\nusage: ez dotnet down APP_NAME APP_ENV\n" >&2
 
     exit 1
   fi
 
   if [[ -z ${args['APP_ENV']+x} ]]; then
-    printf "missing required argument: APP_ENV\nusage: ez laravel down APP_NAME APP_ENV\n" >&2
+    printf "missing required argument: APP_ENV\nusage: ez dotnet down APP_NAME APP_ENV\n" >&2
 
     exit 1
   fi
@@ -2945,7 +3409,7 @@ ez_laravel_down_parse_requirements() {
 }
 
 # :command.parse_requirements
-ez_laravel_new_parse_requirements() {
+ez_dotnet_logs_parse_requirements() {
   local key
 
   # :command.fixed_flags_filter
@@ -2954,7 +3418,7 @@ ez_laravel_new_parse_requirements() {
     case "$key" in
       --help | -h)
         long_usage=yes
-        ez_laravel_new_usage
+        ez_dotnet_logs_usage
         exit
         ;;
 
@@ -2966,7 +3430,321 @@ ez_laravel_new_parse_requirements() {
   done
 
   # :command.command_filter
-  action="laravel new"
+  action="dotnet logs"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        # :argument.case
+        if [[ -z ${args['APP_NAME']+x} ]]; then
+          args['APP_NAME']=$1
+          shift
+        # :argument.case
+        elif [[ -z ${args['APP_ENV']+x} ]]; then
+          args['APP_ENV']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['APP_NAME']+x} ]]; then
+    printf "missing required argument: APP_NAME\nusage: ez dotnet logs APP_NAME APP_ENV\n" >&2
+
+    exit 1
+  fi
+
+  if [[ -z ${args['APP_ENV']+x} ]]; then
+    printf "missing required argument: APP_ENV\nusage: ez dotnet logs APP_NAME APP_ENV\n" >&2
+
+    exit 1
+  fi
+
+  # :command.whitelist_filter
+  if [[ -n ${args['APP_ENV']:-} ]] && [[ ! ${args['APP_ENV']:-} =~ ^(dev|test|staging|production)$ ]]; then
+    printf "%s\n" "APP_ENV must be one of: dev, test, staging, production" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+ez_dotnet_status_parse_requirements() {
+  local key
+
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        ez_dotnet_status_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="dotnet status"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        # :argument.case
+        if [[ -z ${args['APP_NAME']+x} ]]; then
+          args['APP_NAME']=$1
+          shift
+        # :argument.case
+        elif [[ -z ${args['APP_ENV']+x} ]]; then
+          args['APP_ENV']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['APP_NAME']+x} ]]; then
+    printf "missing required argument: APP_NAME\nusage: ez dotnet status APP_NAME APP_ENV\n" >&2
+
+    exit 1
+  fi
+
+  if [[ -z ${args['APP_ENV']+x} ]]; then
+    printf "missing required argument: APP_ENV\nusage: ez dotnet status APP_NAME APP_ENV\n" >&2
+
+    exit 1
+  fi
+
+  # :command.whitelist_filter
+  if [[ -n ${args['APP_ENV']:-} ]] && [[ ! ${args['APP_ENV']:-} =~ ^(dev|test|staging|production)$ ]]; then
+    printf "%s\n" "APP_ENV must be one of: dev, test, staging, production" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+ez_dotnet_migrate_parse_requirements() {
+  local key
+
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        ez_dotnet_migrate_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="dotnet migrate"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        # :argument.case
+        if [[ -z ${args['APP_NAME']+x} ]]; then
+          args['APP_NAME']=$1
+          shift
+        # :argument.case
+        elif [[ -z ${args['APP_ENV']+x} ]]; then
+          args['APP_ENV']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['APP_NAME']+x} ]]; then
+    printf "missing required argument: APP_NAME\nusage: ez dotnet migrate APP_NAME APP_ENV\n" >&2
+
+    exit 1
+  fi
+
+  if [[ -z ${args['APP_ENV']+x} ]]; then
+    printf "missing required argument: APP_ENV\nusage: ez dotnet migrate APP_NAME APP_ENV\n" >&2
+
+    exit 1
+  fi
+
+  # :command.whitelist_filter
+  if [[ -n ${args['APP_ENV']:-} ]] && [[ ! ${args['APP_ENV']:-} =~ ^(dev|test|staging|production)$ ]]; then
+    printf "%s\n" "APP_ENV must be one of: dev, test, staging, production" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+ez_dotnet_rollback_parse_requirements() {
+  local key
+
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        ez_dotnet_rollback_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="dotnet rollback"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        # :argument.case
+        if [[ -z ${args['APP_NAME']+x} ]]; then
+          args['APP_NAME']=$1
+          shift
+        # :argument.case
+        elif [[ -z ${args['APP_ENV']+x} ]]; then
+          args['APP_ENV']=$1
+          shift
+        # :argument.case
+        elif [[ -z ${args['TAG']+x} ]]; then
+          args['TAG']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['APP_NAME']+x} ]]; then
+    printf "missing required argument: APP_NAME\nusage: ez dotnet rollback APP_NAME APP_ENV TAG\n" >&2
+
+    exit 1
+  fi
+
+  if [[ -z ${args['APP_ENV']+x} ]]; then
+    printf "missing required argument: APP_ENV\nusage: ez dotnet rollback APP_NAME APP_ENV TAG\n" >&2
+
+    exit 1
+  fi
+
+  if [[ -z ${args['TAG']+x} ]]; then
+    printf "missing required argument: TAG\nusage: ez dotnet rollback APP_NAME APP_ENV TAG\n" >&2
+
+    exit 1
+  fi
+
+  # :command.whitelist_filter
+  if [[ -n ${args['APP_ENV']:-} ]] && [[ ! ${args['APP_ENV']:-} =~ ^(dev|test|staging|production)$ ]]; then
+    printf "%s\n" "APP_ENV must be one of: dev, test, staging, production" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+ez_dotnet_new_parse_requirements() {
+  local key
+
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        ez_dotnet_new_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="dotnet new"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -3017,7 +3795,7 @@ before_hook() {
 
 # :command.initialize
 initialize() {
-  declare -g version="0.3.0"
+  declare -g version="0.4.0"
   set -e
 
 }
@@ -3046,13 +3824,17 @@ run() {
     "shared stop") ez_shared_stop_command ;;
     "shared restart") ez_shared_restart_command ;;
     "shared down") ez_shared_down_command ;;
-    "laravel") ez_laravel_command ;;
-    "laravel deploy") ez_laravel_deploy_command ;;
-    "laravel start") ez_laravel_start_command ;;
-    "laravel stop") ez_laravel_stop_command ;;
-    "laravel restart") ez_laravel_restart_command ;;
-    "laravel down") ez_laravel_down_command ;;
-    "laravel new") ez_laravel_new_command ;;
+    "dotnet") ez_dotnet_command ;;
+    "dotnet deploy") ez_dotnet_deploy_command ;;
+    "dotnet start") ez_dotnet_start_command ;;
+    "dotnet stop") ez_dotnet_stop_command ;;
+    "dotnet restart") ez_dotnet_restart_command ;;
+    "dotnet down") ez_dotnet_down_command ;;
+    "dotnet logs") ez_dotnet_logs_command ;;
+    "dotnet status") ez_dotnet_status_command ;;
+    "dotnet migrate") ez_dotnet_migrate_command ;;
+    "dotnet rollback") ez_dotnet_rollback_command ;;
+    "dotnet new") ez_dotnet_new_command ;;
   esac
 }
 

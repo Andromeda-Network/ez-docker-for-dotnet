@@ -1,8 +1,10 @@
 check_containers() {
-    log_header "Checking shared containers health before building the Laravel container."
+    log_header "Checking shared containers health before deploying the app."
     local containers=("$@")
     local retries=4
     local delay=10
+    # Local: the callers have variables of these names (dotnet deploy's $container).
+    local container attempt i
 
     for container in "${containers[@]}"; do
         for attempt in $(seq 1 $((retries + 1))); do

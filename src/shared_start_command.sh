@@ -2,4 +2,4 @@
 
 load_env "docker/docker.env"
 
-docker compose -f docker/compose-shared.yml start
+shared_compose start

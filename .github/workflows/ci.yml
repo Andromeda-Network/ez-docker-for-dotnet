@@ -1,0 +1,66 @@
+# Checks this tool: `ez` matches its source, passes shellcheck and its flow tests, and the .NET
+# template builds and runs the example app.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ez:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: ez is generated from src/ (bashly 1.3.8)
+        run: |
+          gem install bashly -v 1.3.8 --no-document
+          cp ez /tmp/ez.committed
+          bashly generate >/dev/null
+          diff -u /tmp/ez.committed ez || { echo "::error::ez is out of date: run 'bashly generate' and commit it"; exit 1; }
+      - name: shellcheck
+        run: shellcheck -S warning ez tests/run.sh tests/stub/docker
+      - name: Flow tests (stub docker)
+        run: bash tests/run.sh
+
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test example/Example.slnx -c Release
+      - name: Build the example with template/dotnet.Dockerfile
+        run: |
+          set -e
+          cp template/.dockerignore example/.dockerignore
+          args="--build-arg PROJECT=src/Example.Api/Example.Api.csproj -f template/dotnet.Dockerfile example"
+          docker build --target test $args
+          docker build -t example:ci $args
+      - name: The container is healthy, non-root, in Iran time
+        run: |
+          set -e
+          docker run -d --name example -p 8080:8080 example:ci
+          for i in $(seq 1 40); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' example)" = healthy ] && break
+            sleep 2
+          done
+          docker inspect -f '{{.State.Health.Status}}' example | grep -qx healthy
+          curl -fsS http://localhost:8080/healthz | grep -qx Healthy
+          test "$(docker exec example id -u)" != 0
+          test "$(docker exec example date +%z)" = "+0330"
+      - name: Compose files are valid
+        run: |
+          set -e
+          export SHARED_NETWORK_NAME=ez APP_NAME=demo APP_ENV=production PROJECT=src/A/A.csproj \
+                 ASPNETCORE_ENVIRONMENT=Production APP_IMAGE=ghcr.io/acme/demo:1 MIGRATIONS_IMAGE=ghcr.io/acme/demo-migrations:1 \
+                 OWNER_USER_ID=1000 OWNER_GROUP_ID=1000 APP_PORT=8000 MSSQL_SA_PASSWORD=x REDIS_PASSWORD=x POSTGRES_PASSWORD=x SEQ_ADMIN_PASSWORD=x
+          docker compose -f docker/compose-shared.yml --profile mssql --profile postgres --profile seq --profile portainer config --quiet
+          for env in dev test staging production; do mkdir -p template/env/generated template/src-$env; touch template/env/generated/$env.env; done
+          for env in dev test staging production; do APP_ENV=$env docker compose -f template/compose-dotnet.yml --profile $env --profile migrate config --quiet; done
+          docker compose -f template/compose-dotnet-image.yml --profile production --profile migrate config --quiet
+      - if: always()
+        run: docker logs example || true

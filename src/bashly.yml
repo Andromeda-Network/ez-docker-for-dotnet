@@ -1,6 +1,6 @@
 name: ez
-help: easy to setup, robust and production ready environment for Laravel using Docker, Docker Compose and bash script.
-version: 0.3.0
+help: easy to setup, robust and production ready environment for .NET (ASP.NET Core) apps using Docker, Docker Compose and bash script.
+version: 0.4.0
 
 commands:
 - name: docker
@@ -43,86 +43,147 @@ commands:
   - name: down
     help: remove shared containers
 
-- name: laravel
-  alias: l
-  help: Laravel containers Commands
+- name: dotnet
+  alias: n
+  help: .NET (ASP.NET Core) app commands
 
   commands:
   - name: deploy
     alias: d
-    help: build and start Laravel containers
+    help: build or pull, migrate, start and health-check a .NET app; rolls back if it is unhealthy
     args:
       - name: APP_NAME
-        help: Laravel app name
+        help: .NET app name
         required: true
 
       - name: APP_ENV
-        help: Laravel app environment
+        help: .NET app environment
         allowed: [ dev, test, staging, production ]
         required: true
+    flags:
+      - long: --tag
+        short: -t
+        arg: TAG
+        help: image mode only, the image tag to deploy (CI passes sha-<commit>); overrides APP_IMAGE's tag
 
   - name: start
     alias : s
-    help: start Laravel containers
+    help: start .NET containers
     args:
       - name: APP_NAME
-        help: Laravel app name
+        help: .NET app name
         required: true
 
       - name: APP_ENV
-        help: Laravel app environment
+        help: .NET app environment
         allowed: [ dev, test, staging, production ]
         required: true
     flags:
       - long: --update
         short: -u
-        help: update the source code before starting the container
+        help: dev only, update the source code before starting the container
 
   - name: stop
-    help: stop Laravel containers
+    help: stop .NET containers
     args:
       - name: APP_NAME
-        help: Laravel app name
+        help: .NET app name
         required: true
 
       - name: APP_ENV
-        help: Laravel app environment
+        help: .NET app environment
         allowed: [ dev, test, staging, production ]
         required: true
 
   - name: restart
     alias : r
-    help: restart Laravel containers
+    help: restart .NET containers
     args:
       - name: APP_NAME
-        help: Laravel app name
+        help: .NET app name
         required: true
 
       - name: APP_ENV
-        help: Laravel app environment
+        help: .NET app environment
         allowed: [ dev, test, staging, production ]
         required: true
     flags:
       - long: --update
         short: -u
-        help: update the source code before restarting the container
+        help: dev only, update the source code before restarting the container
 
   - name: down
-    help: remove Laravel containers
+    help: remove .NET containers
     args:
       - name: APP_NAME
-        help: Laravel app name
+        help: .NET app name
         required: true
 
       - name: APP_ENV
-        help: Laravel app environment
+        help: .NET app environment
         allowed: [ dev, test, staging, production ]
+        required: true
+
+  - name: logs
+    alias: l
+    help: follow a .NET app's logs
+    args:
+      - name: APP_NAME
+        help: .NET app name
+        required: true
+
+      - name: APP_ENV
+        help: .NET app environment
+        allowed: [ dev, test, staging, production ]
+        required: true
+
+  - name: status
+    help: show a .NET app's containers and its deployed version
+    args:
+      - name: APP_NAME
+        help: .NET app name
+        required: true
+
+      - name: APP_ENV
+        help: .NET app environment
+        allowed: [ dev, test, staging, production ]
+        required: true
+
+  - name: migrate
+    alias: m
+    help: run the app's EF Core migrations bundle
+    args:
+      - name: APP_NAME
+        help: .NET app name
+        required: true
+
+      - name: APP_ENV
+        help: .NET app environment
+        allowed: [ dev, test, staging, production ]
+        required: true
+
+  - name: rollback
+    help: image mode, redeploy an earlier image tag
+    args:
+      - name: APP_NAME
+        help: .NET app name
+        required: true
+
+      - name: APP_ENV
+        help: .NET app environment
+        allowed: [ dev, test, staging, production ]
+        required: true
+      - name: TAG
+        help: the image tag to go back to (see `ez dotnet status`)
         required: true
 
   - name: new
     alias: n
-    help: setup a new Laravel application
+    help: set up a new .NET application
 
 examples:
 - ez docker install
-- ez d i
+- ez shared deploy
+- ez dotnet new
+- ez dotnet deploy myapp production --tag sha-1a2b3c4d5e6f
+- ez n d myapp test

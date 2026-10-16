@@ -1,0 +1,39 @@
+# What every .NET container shares. Extended by compose-dotnet.yml (build mode) and
+# compose-dotnet-image.yml (image mode).
+services:
+
+  dotnet: #inner port :8080
+    build:
+      dockerfile: ../dotnet.Dockerfile
+      args:
+        - PROJECT=${PROJECT}
+        - DOTNET_VERSION=${DOTNET_VERSION:-10.0}
+    env_file:
+      # The merged environment: docker.env + app.env + <env>.env, minus ez's own secrets.
+      - ./env/generated/${APP_ENV}.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+    # The image's own HEALTHCHECK probes /healthz on :8080 (app.MapHealthChecks("/healthz")).
+
+  # Image mode: the artifact comes from the registry, so no build section.
+  dotnet-runtime: #inner port :8080
+    env_file:
+      - ./env/generated/${APP_ENV}.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  # EF Core migrations bundle (dotnet.Dockerfile target `migrations`), run once per deploy.
+  migrations:
+    env_file:
+      - ./env/generated/${APP_ENV}.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+    restart: "no"
