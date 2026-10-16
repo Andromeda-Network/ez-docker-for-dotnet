@@ -15,6 +15,16 @@ public class ApiTests(WebApplicationFactory<Program> factory) : IClassFixture<We
     }
 
     [Fact]
+    public async Task HealthCheck_CanBeMadeToFail()
+    {
+        var failing = factory.WithWebHostBuilder(b => b.UseSetting("Example:FailHealthCheck", "true"));
+
+        var response = await failing.CreateClient().GetAsync("/healthz");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Root_ReportsTheEnvironment()
     {
         var body = await factory.CreateClient().GetStringAsync("/");
