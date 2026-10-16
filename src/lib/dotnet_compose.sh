@@ -3,18 +3,25 @@
 #
 # Needs: app_dir, merged_env_path (merge_app_envs) and the loaded env (load_app_envs).
 dotnet_compose() {
-  local file="$app_dir/compose-dotnet.yml"
-  if [[ "${DEPLOY_MODE:-build}" == "image" && "${args[APP_ENV]}" != "dev" && "${args[APP_ENV]}" != "test" ]]; then
-    file="$app_dir/compose-dotnet-image.yml"
+  local file="$app_dir/env/generated/compose.${args[APP_ENV]}.yml" files project
+  generate_compose "$file" "$(ez_image_tag)"
+  files=(-f "$file")
+  if [[ -f "$app_dir/compose.override.yml" ]]; then
+    files+=(-f "$app_dir/compose.override.yml")
   fi
-  local project
   project=$(echo "${args[APP_NAME]}_${args[APP_ENV]}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '_')
-  docker compose -p "$project" -f "$file" --profile "${args[APP_ENV]}" --env-file "$merged_env_path" "$@"
+  # --project-directory: relative paths in compose.override.yml resolve against apps/<app>.
+  docker compose -p "$project" --project-directory "$app_dir" "${files[@]}" --env-file "$merged_env_path" "$@"
 }
 
-# The compose service and container of an environment.
-dotnet_service() { echo "dotnet-${args[APP_ENV]}"; }
-dotnet_container() { echo "${args[APP_NAME]}_${args[APP_ENV]}"; }
+# Image mode: the tag to run. EZ_TAG while a deploy or rollback sets it, else the deployed one,
+# else APP_IMAGE's own tag.
+ez_image_tag() {
+  if [[ -n "${EZ_TAG:-}" ]]; then echo "$EZ_TAG"; return; fi
+  local deployed
+  deployed=$(read_deployed_tag "${args[APP_NAME]}" "${args[APP_ENV]}")
+  if [[ -n "$deployed" && "$deployed" != git-* ]]; then echo "$deployed"; else image_tag "${APP_IMAGE:-x:latest}"; fi
+}
 
 # Validate APP_NAME/APP_ENV, find the app, merge and load its environment.
 prepare_app() {
@@ -47,4 +54,11 @@ prepare_app() {
     log_error "Invalid DEPLOY_MODE: '$DEPLOY_MODE' (expected 'build' or 'image') in $app_dir/env/app.env"
     exit 1
   fi
+  # dev runs live source and test builds the tree it is testing: image mode is for the
+  # deployed environments, so an image-mode app still builds these two from git.
+  if [[ "$DEPLOY_MODE" == "image" && ( "${args[APP_ENV]}" == "dev" || "${args[APP_ENV]}" == "test" ) ]]; then
+    DEPLOY_MODE=build
+    IMAGE_MODE_APP=1
+  fi
+  validate_services
 }

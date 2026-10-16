@@ -4,4 +4,5 @@ if [[ "${args[APP_ENV]}" == "dev" && -n "${args[--update]}" ]]; then
   update_source_code
 fi
 
-dotnet_compose restart "$(dotnet_service)"
+# shellcheck disable=SC2046 # one word per service
+dotnet_compose restart $(app_services)

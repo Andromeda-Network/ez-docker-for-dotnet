@@ -106,6 +106,9 @@ mkdir -p "$APP_DIR/env/generated"
 
 cat <<EOL > "$APP_DIR/env/app.env"
 APP_NAME=$APP_NAME
+# The containers this app runs, deployed together. More than one: name them here and configure
+# each with <NAME>_PROJECT, _CONTEXT, _DOCKERFILE, _PORT, _HEALTH (see the README).
+SERVICES=web
 GIT_URL=$GIT_URL
 PROJECT=$PROJECT
 # The project holding the DbContext and migrations, if not PROJECT.
@@ -135,9 +138,6 @@ done
 
 cp "template/dotnet.Dockerfile" "$APP_DIR/dotnet.Dockerfile"
 cp "template/.dockerignore" "$APP_DIR/.dockerignore"
-cp "template/common-dotnet.yml" "$APP_DIR/common-dotnet.yml"
-cp "template/compose-dotnet.yml" "$APP_DIR/compose-dotnet.yml"
-cp "template/compose-dotnet-image.yml" "$APP_DIR/compose-dotnet-image.yml"
 
 chown -R "$OWNER_USER_NAME:$OWNER_GROUP_NAME" "$APP_DIR" 2>/dev/null || true
 chmod 700 "$APP_DIR/env"
