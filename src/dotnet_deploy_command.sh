@@ -11,10 +11,14 @@ if [[ "$DEPLOY_MODE" == "image" ]]; then
   # The image already contains the application, so this host needs no source or SDK; CI built
   # and tested it.
   if [[ "$env_name" == "dev" || "$env_name" == "test" ]]; then
-    log_error "DEPLOY_MODE=image does not apply to $env_name."
-    log_error "dev runs live source and test builds the tree it is testing; neither runs a fixed artifact."
-    exit 1
+    # dev runs live source and test builds the tree it is testing: image mode is for the
+    # deployed environments, so an image-mode app still builds these two from git.
+    log_info "DEPLOY_MODE=image applies to staging and production; $env_name builds from $GIT_BRANCH."
+    DEPLOY_MODE=build
   fi
+fi
+
+if [[ "$DEPLOY_MODE" == "image" ]]; then
   if [[ -z "$APP_IMAGE" ]]; then
     log_error "DEPLOY_MODE=image but APP_IMAGE is empty. Set it in $app_dir/env/app.env, e.g."
     log_error "  APP_IMAGE=ghcr.io/your-org/your-app:latest"
