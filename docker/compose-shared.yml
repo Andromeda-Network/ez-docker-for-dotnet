@@ -1,3 +1,5 @@
+# Started by `ez shared deploy`: nginx-pm and redis always; the database from DB_ENGINE and the
+# optional services from SHARED_PROFILES (both in docker/docker.env).
 services:
 
   nginx-pm:
@@ -6,21 +8,39 @@ services:
       file: common-shared.yml
       service: nginx-pm
 
-  mysql8:
-    container_name: mysql8
+  redis:
+    container_name: redis
     extends:
       file: common-shared.yml
-      service: mysql8
+      service: redis
 
-  phpmyadmin:
-    container_name: pma
+  mssql:
+    container_name: mssql
     extends:
       file: common-shared.yml
-      service: phpmyadmin
-    #ports:
-      #- ${PORT_PMA}:80 #web console better to not expose this directly, route through nginx
-    depends_on:
-      - mysql8
+      service: mssql
+    profiles: [ mssql ]
+
+  postgres:
+    container_name: postgres
+    extends:
+      file: common-shared.yml
+      service: postgres
+    profiles: [ postgres ]
+
+  seq:
+    container_name: seq
+    extends:
+      file: common-shared.yml
+      service: seq
+    profiles: [ seq ]
+
+  portainer:
+    container_name: portainer
+    extends:
+      file: common-shared.yml
+      service: portainer
+    profiles: [ portainer ]
 
 networks:
   default:

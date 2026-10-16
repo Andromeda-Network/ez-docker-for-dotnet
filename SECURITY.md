@@ -2,7 +2,7 @@
 
 ## Overview
 
-EZ Docker For Laravel takes security seriously. This document outlines our security features, threat model, vulnerability reporting process, and best practices for users.
+EZ Docker For .NET takes security seriously. This document outlines our security features, threat model, vulnerability reporting process, and best practices for users.
 
 ## Security Features
 
@@ -11,9 +11,9 @@ EZ Docker For Laravel takes security seriously. This document outlines our secur
 **SQL Injection Protection:**
 - All database identifiers (names, usernames) validated against strict patterns
 - Only alphanumeric characters and underscores allowed
-- MySQL identifier quoting with backticks
-- Password sanitization for special character handling
-- No direct string interpolation in SQL commands
+- SQL Server identifier quoting with brackets (`[name]`), PostgreSQL with `%I`
+- Passwords containing `'` or `]` are refused
+- Names and passwords reach `sqlcmd`/`psql` as variables from the environment, never on a command line
 
 **Command Injection Protection:**
 - Input validation for all user-provided values
@@ -27,13 +27,16 @@ EZ Docker For Laravel takes security seriously. This document outlines our secur
 - **Database names**: `^[a-zA-Z0-9_]+$` (max 64 chars)
 - **Usernames**: `^[a-zA-Z0-9_]+$` (max 32 chars)
 - **Git URLs**: Valid URL format with protocol
+- **Project paths**: relative `.csproj` paths inside the repository (no `..`, no absolute paths)
+- **Image tags**: Docker's tag grammar (`--tag`, `ez dotnet rollback`)
 
 ### 2. Network Security
 
 **Database Access:**
-- MySQL application users are granted host `'%'` for broad compatibility across Docker networks
+- Every app environment gets its own database and login (`db_owner` of that database only); apps never see the `sa`/`postgres` password, which `ez` masks out of their environment along with the registry token
 - Network isolation between containers is provided by Docker networks
 - Database ports are not published to the host by default
+- Admin UIs (Nginx Proxy Manager, Seq, Portainer) listen on `127.0.0.1` only: reach them through an SSH tunnel
 
 **Service Exposure:**
 - Development/test: Exposed on `APP_PORT` only
@@ -49,10 +52,12 @@ EZ Docker For Laravel takes security seriously. This document outlines our secur
 - Version management through `.env` configuration
 - Controlled updates with testing
 
-**Pinned Versions:**
+**Pinned Versions** (`docker/docker.env`, defaults in `.env.example`):
 - Nginx Proxy Manager: 2.11.1
-- MySQL: 8.0.35
-- phpMyAdmin: 5.2.1
+- SQL Server: 2022 (`MSSQL_VERSION`; pin a CU tag such as `2022-CU15-ubuntu-22.04` in production)
+- PostgreSQL: 17.2
+- Redis: 7.4.1
+- Seq: 2024.3
 - Portainer: 2.19.4
 
 **Container Security:**
@@ -69,21 +74,15 @@ EZ Docker For Laravel takes security seriously. This document outlines our secur
 - `.env.example` as template (no secrets)
 - Environment-specific configurations
 
-**Security Headers:**
-- `Strict-Transport-Security`: HSTS with 1-year max-age
-- `Content-Security-Policy`: Restrictive CSP
-- `X-Frame-Options`: DENY (clickjacking protection)
-- `X-Content-Type-Options`: nosniff
-- `X-XSS-Protection`: 1; mode=block
-- `Referrer-Policy`: strict-origin-when-cross-origin
-- `Permissions-Policy`: Restrictive permissions
-- `server_tokens off`: Hide Nginx version
+**App images (`template/dotnet.Dockerfile`):**
+- Microsoft's `aspnet` runtime image: no SDK, compilers or source in what runs
+- Runs as the image's non-root user (uid 1654); writable data only in `storage-<env>` volumes owned by it
+- Secrets are never baked in: the build context's `.dockerignore` excludes env files and keys, and settings arrive as environment variables at run time
+- `ASPNETCORE_ENVIRONMENT=Production` in production, so the developer exception page is off
+- Health check on `/healthz`; a deploy that doesn't become healthy is rolled back
 
-**PHP Security:**
-- `display_errors=Off` in production
-- Error logging to files only
-- OPcache optimization per environment
-- Secure session configuration
+**Security headers:** set them in the app (`app.UseHsts()`, a headers middleware) or as a custom
+location in Nginx Proxy Manager, which terminates TLS for every app.
 
 ### 5. Error Handling
 
@@ -170,10 +169,11 @@ EZ Docker For Laravel takes security seriously. This document outlines our secur
 4. **Regular Backups:**
    ```bash
    # Backup databases
-   docker exec mysql8 mysqldump -u root -p{password} --all-databases > backup.sql
+   SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -U sa \
+     -Q "BACKUP DATABASE [myapp_production] TO DISK = N'/var/opt/mssql/backup/myapp_production.bak' WITH COMPRESSION"
    
    # Backup volumes
-   docker run --rm -v shared_mysql:/data -v $(pwd):/backup ubuntu tar czf /backup/mysql-backup.tar.gz /data
+   tar czf mssql-data.tar.gz shared/mssql   # with the mssql container stopped
    ```
 
 5. **Monitor Logs:**
@@ -258,8 +258,8 @@ If you discover a security vulnerability, please report it responsibly:
 
 ### Staying Informed
 
-- Watch the [GitHub repository](https://github.com/MansourM/ez-docker-for-laravel)
-- Check [releases](https://github.com/MansourM/ez-docker-for-laravel/releases) for security updates
+- Watch the [GitHub repository](https://github.com/Andromeda-Network/ez-docker-for-dotnet)
+- Check [releases](https://github.com/Andromeda-Network/ez-docker-for-dotnet/releases) for security updates
 
 ### Applying Updates
 
@@ -332,7 +332,8 @@ sudo bashly generate
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Docker Security Best Practices](https://docs.docker.com/engine/security/)
 - [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker)
-- [Laravel Security](https://laravel.com/docs/security)
+- [ASP.NET Core security](https://learn.microsoft.com/aspnet/core/security/)
+- [.NET container images](https://learn.microsoft.com/dotnet/core/docker/container-images)
 
 ## Contact
 
@@ -341,8 +342,8 @@ For security concerns:
 - **GitHub**: [@MansourM](https://github.com/MansourM)
 
 For general questions:
-- **GitHub Issues**: [Create an issue](https://github.com/MansourM/ez-docker-for-laravel/issues)
-- **GitHub Discussions**: [Start a discussion](https://github.com/MansourM/ez-docker-for-laravel/discussions)
+- **GitHub Issues**: [Create an issue](https://github.com/Andromeda-Network/ez-docker-for-dotnet/issues)
+- **GitHub Discussions**: [Start a discussion](https://github.com/Andromeda-Network/ez-docker-for-dotnet/discussions)
 
 ---
 

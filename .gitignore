@@ -7,7 +7,7 @@ docker/docker.env
 # Environment configuration (keep .env.example tracked)
 .env
 
-# App runtime data: env files hold secrets (APP_KEY, DB passwords),
+# App runtime data: env files hold secrets (connection strings, DB passwords),
 # src-* are repo clones, storage-* holds app data. Never commit.
 apps/
 
@@ -16,3 +16,8 @@ wip_notes.md
 *.swp
 *.swo
 *~
+
+# .NET build output (example/)
+**/bin/
+**/obj/
+**/TestResults/

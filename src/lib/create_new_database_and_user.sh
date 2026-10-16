@@ -1,3 +1,10 @@
+# Create the app environment's database and its own login on the shared database server
+# (DB_ENGINE in docker/docker.env: mssql, postgres, or none to skip). Idempotent: an existing
+# database is kept, an existing login gets the password from the env file again.
+#
+# Names reach SQL as identifiers, so they are validated first (letters, digits, _ only).
+# Passwords travel as environment variables: `docker exec -e NAME` (no value) copies NAME from
+# this process's environment, so no password appears on a command line (`ps`), host or container.
 create_new_database_and_user() {
 
   if [ "$#" -ne 3 ]; then
@@ -5,59 +12,68 @@ create_new_database_and_user() {
       return 1
   fi
 
-  # Set variables
-  NEW_DB_NAME=$1
-  NEW_USER_NAME=$2
-  NEW_USER_PASSWORD=$3
+  local db_name=$1 user_name=$2 user_password=$3
+  local engine="${DB_ENGINE:-mssql}"
 
-  log_header "Creating Database: $NEW_DB_NAME with User: $NEW_USER_NAME"
+  if [[ "$engine" == "none" ]]; then
+    log_info "DB_ENGINE=none: not creating a database."
+    return 0
+  fi
 
-  MYSQL_USER="root"
-  # $DB_HOST & DB_ROOT_PASSWORD is read from docker.env
+  if [[ ! "$db_name" =~ ^[A-Za-z_][A-Za-z0-9_]{0,63}$ || ! "$user_name" =~ ^[A-Za-z_][A-Za-z0-9_]{0,63}$ ]]; then
+    log_error "Database and user names must be letters, digits and _ (got '$db_name', '$user_name')."
+    exit 1
+  fi
+  if [[ -z "$user_password" || "$user_password" == *"'"* || "$user_password" == *"]"* ]]; then
+    log_error "DB_PASSWORD for $user_name must be set and must not contain ' or ]."
+    exit 1
+  fi
 
-  # Check if database exists by querying INFORMATION_SCHEMA.SCHEMATA
-  DB_EXISTS=$(docker exec -i $DB_HOST mysql -u"$MYSQL_USER" -p"$DB_ROOT_PASSWORD" -e \
-      "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$NEW_DB_NAME';" --skip-column-names 2>/dev/null)
+  log_header "Creating Database: $db_name with User: $user_name ($engine)"
 
-  if [[ "$DB_EXISTS" != "1" ]]; then
-    # Database doesn't exist, so create it
-    if ! docker exec -i $DB_HOST mysql -u"$MYSQL_USER" -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE \`$NEW_DB_NAME\`;"; then
-      log_error "Failed to create database '$NEW_DB_NAME'"
+  case "$engine" in
+    mssql)
+      # sqlcmd reads $(DB), $(USR) and $(PWD_) from its environment, and the sa password from
+      # SQLCMDPASSWORD.
+      if ! SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" DB="$db_name" USR="$user_name" PWD_="$user_password" \
+          docker exec -i -e SQLCMDPASSWORD -e DB -e USR -e PWD_ \
+          mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -b <<'SQL'
+IF DB_ID(N'$(DB)') IS NULL EXEC(N'CREATE DATABASE [$(DB)]');
+IF SUSER_ID(N'$(USR)') IS NULL
+    EXEC(N'CREATE LOGIN [$(USR)] WITH PASSWORD = N''$(PWD_)'', CHECK_POLICY = OFF, DEFAULT_DATABASE = [$(DB)]');
+ELSE
+    EXEC(N'ALTER LOGIN [$(USR)] WITH PASSWORD = N''$(PWD_)''');
+EXEC(N'USE [$(DB)];
+IF USER_ID(N''$(USR)'') IS NULL CREATE USER [$(USR)] FOR LOGIN [$(USR)];
+ALTER ROLE db_owner ADD MEMBER [$(USR)];');
+SQL
+      then
+        log_error "Failed to create database '$db_name' or login '$user_name' on mssql."
+        exit 1
+      fi
+      ;;
+    postgres)
+      # The new role's password is a psql variable set from the script itself (\getenv), not argv.
+      if ! PGPASSWORD="$POSTGRES_PASSWORD" EZ_DB="$db_name" EZ_USR="$user_name" EZ_PWD="$user_password" \
+          docker exec -i -e PGPASSWORD -e EZ_DB -e EZ_USR -e EZ_PWD postgres \
+          psql -v ON_ERROR_STOP=1 -U postgres <<'SQL'
+\getenv db EZ_DB
+\getenv usr EZ_USR
+\getenv pwd EZ_PWD
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'usr', :'pwd') WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'usr') \gexec
+SELECT format('ALTER ROLE %I PASSWORD %L', :'usr', :'pwd') \gexec
+SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'usr') WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db') \gexec
+SQL
+      then
+        log_error "Failed to create database '$db_name' or role '$user_name' on postgres."
+        exit 1
+      fi
+      ;;
+    *)
+      log_error "Unknown DB_ENGINE '$engine' (mssql, postgres or none)."
       exit 1
-    else
-      log_success "Created Database: $NEW_DB_NAME"
-    fi
-  else
-    log "Database: $NEW_DB_NAME Already Exists"
-  fi
+      ;;
+  esac
 
-  # NOTE: the DB user is granted host '%' (connect from any address) on purpose.
-  # This "just works" on every Docker network setup, which keeps the tool usable
-  # for beginners. Restricting the host (e.g. to '172.%.%.%', the default Docker
-  # bridge subnet) is more secure, but silently breaks the DB connection whenever
-  # Docker assigns a container an address outside that range (custom networks,
-  # non-default subnets) — a hard-to-debug trap for new users. If you run this on
-  # an exposed/shared MySQL and want to lock it down, narrow the '%' below to your
-  # actual container subnet.
-  # Check if user exists
-  if docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "SELECT user FROM mysql.user WHERE user='$NEW_USER_NAME';" --skip-column-names -B | grep -q "$NEW_USER_NAME"; then
-      log_warning "User '$NEW_USER_NAME' already exists. Updating password."
-      # Update user password
-      if ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "ALTER USER '$NEW_USER_NAME'@'%' IDENTIFIED BY '$NEW_USER_PASSWORD';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON \`$NEW_DB_NAME\`.* TO '$NEW_USER_NAME'@'%';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"; then
-        log_error "Failed to update password and/or grant privileges for user '$NEW_USER_NAME'"
-        exit 1
-      fi
-      log_success "User: '$NEW_USER_NAME' password updated for DB: $NEW_DB_NAME with full privileges";
-  else
-      # Create user and grant privileges
-      if ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "CREATE USER '$NEW_USER_NAME'@'%' IDENTIFIED BY '$NEW_USER_PASSWORD';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON \`$NEW_DB_NAME\`.* TO '$NEW_USER_NAME'@'%';" || \
-         ! docker exec -i $DB_HOST mysql -u$MYSQL_USER -p$DB_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"; then
-        log_error "Failed to create and grant privileges for user '$NEW_USER_NAME'"
-        exit 1
-      fi
-      log_success "User: '$NEW_USER_NAME' created for DB: $NEW_DB_NAME with full privileges";
-  fi
+  log_success "Database $db_name ready; $user_name owns it."
 }

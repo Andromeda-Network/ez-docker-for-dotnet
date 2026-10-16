@@ -45,23 +45,53 @@ validate_environment() {
   esac
 }
 
-# Validate PHP version (must be one of the officially supported versions)
-# Args: $1 - PHP version (e.g. 8.3)
+# Validate .NET version (the SDK/runtime image tag the Dockerfile builds on)
+# Args: $1 - .NET version (e.g. 10.0)
 # Returns: 0 if valid, 1 if invalid
-validate_php_version() {
+validate_dotnet_version() {
   local version="$1"
 
   case "$version" in
-    8.2|8.3|8.4|8.5)
+    8.0|9.0|10.0)
       return 0
       ;;
     *)
       if [ "${TEST_MODE:-0}" != "1" ]; then
-        echo "[ERROR] Invalid PHP version: $version. Must be one of: 8.2, 8.3, 8.4, 8.5" >&2
+        echo "[ERROR] Invalid .NET version: $version. Must be one of: 8.0, 9.0, 10.0" >&2
       fi
       return 1
       ;;
   esac
+}
+
+# Validate the project path: relative, inside the repository, a .csproj
+# Args: $1 - path, e.g. src/MyApp/MyApp.csproj
+# Returns: 0 if valid, 1 if invalid
+validate_project_path() {
+  local path="$1"
+
+  if [[ "$path" =~ ^[A-Za-z0-9_./-]+\.csproj$ && "$path" != /* && "$path" != *..* ]]; then
+    return 0
+  fi
+  if [ "${TEST_MODE:-0}" != "1" ]; then
+    echo "[ERROR] Invalid project path: $path. Use a relative path to a .csproj, e.g. src/MyApp/MyApp.csproj" >&2
+  fi
+  return 1
+}
+
+# Validate a Docker image tag
+# Args: $1 - tag
+# Returns: 0 if valid, 1 if invalid
+validate_image_tag() {
+  local tag="$1"
+
+  if [[ "$tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+    return 0
+  fi
+  if [ "${TEST_MODE:-0}" != "1" ]; then
+    echo "[ERROR] Invalid image tag: $tag" >&2
+  fi
+  return 1
 }
 
 # Validate Git URL format

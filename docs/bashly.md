@@ -132,8 +132,8 @@ bashly doc               # Generate markdown documentation
 
 We use Bashly to generate the `ez` CLI tool:
 
-- **Configuration**: `src/bashly.yml` defines all commands (docker, shared, laravel)
-- **Commands**: Each command has its own file (e.g., `src/laravel_deploy_command.sh`)
+- **Configuration**: `src/bashly.yml` defines all commands (docker, shared, dotnet)
+- **Commands**: Each command has its own file (e.g., `src/dotnet_deploy_command.sh`)
 - **Libraries**: Reusable functions in `src/lib/` (logging, validation, etc.)
 - **Hooks**: `src/before.sh` runs before every command (e.g., root check)
 - **Generated**: `ez` is the final executable (never edit directly!)

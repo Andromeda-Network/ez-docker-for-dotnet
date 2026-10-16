@@ -21,9 +21,11 @@ merge_envs() {
 
   # Mask host-side plumbing out of the app's .env. These configure ez itself — the registry it
   # pulls from, the database superuser, the source repo — and the application has no use for any
-  # of them; REGISTRY_TOKEN especially has no business inside a Laravel environment.
+  # of them; REGISTRY_TOKEN especially has no business inside an app's environment.
   # TODO improve this part
-  merged_content=$(echo "$merged_content" | grep -Ev '^(SHARED_NETWORK_NAME|DB_ROOT_PASSWORD|GIT_URL|REGISTRY_HOST|REGISTRY_USER|REGISTRY_TOKEN)=')
+  # The shared services' own superuser passwords (SQL Server sa, Postgres, Redis, Seq) are ez's,
+  # not the app's: each app gets its own database login (create_new_database_and_user).
+  merged_content=$(echo "$merged_content" | grep -Ev '^(SHARED_NETWORK_NAME|SHARED_PROFILES|DB_ROOT_PASSWORD|MSSQL_SA_PASSWORD|POSTGRES_PASSWORD|SEQ_ADMIN_PASSWORD|GIT_URL|REGISTRY_HOST|REGISTRY_USER|REGISTRY_TOKEN)=')
 
   echo "$merged_content" > "$output"
 }

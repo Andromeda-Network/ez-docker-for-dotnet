@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# A stand-in for `docker` in tests/run.sh: records every call in $STUB_LOG and answers like a
+# healthy host. STUB_HEALTH=unhealthy makes app containers fail their health check;
+# STUB_HEALTH_AFTER=<tag> makes only containers started with that image tag healthy.
+echo "docker $*" >>"$STUB_LOG"
+case "$1" in
+  ps)
+    # is_container_running: echo the name it filters for.
+    for a in "$@"; do if [[ "$a" == name=* ]]; then echo "${a#name=}"; fi; done; exit 0 ;;
+  info|login|tag|network) exit 0 ;;
+  image) [[ -n "${STUB_HAS_IMAGE:-}" ]] && exit 0 || exit 1 ;;
+  exec) cat >/dev/null; exit 0 ;;
+  logs) echo "(stub logs)"; exit 0 ;;
+  inspect)
+    container="${*: -1}"
+    if [[ "$container" == nginx-pm || "$container" == mssql || "$container" == postgres ]]; then echo healthy; exit 0; fi
+    if [[ -n "${STUB_HEALTH_AFTER:-}" ]]; then
+      grep -q "APP_IMAGE=.*:${STUB_HEALTH_AFTER}\b" "$STUB_STATE" 2>/dev/null && echo healthy || echo unhealthy
+    else
+      echo "${STUB_HEALTH:-healthy}"
+    fi ;;
+  compose)
+    # Remember which image the last `up` used (the environment is what compose interpolates).
+    if [[ " $* " == *" up "* ]]; then echo "APP_IMAGE=${APP_IMAGE:-}" >"$STUB_STATE"; fi
+    exit 0 ;;
+  *) exit 0 ;;
+esac

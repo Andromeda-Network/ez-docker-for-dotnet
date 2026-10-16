@@ -1,33 +1,49 @@
 <div align="center">
-<img src="image/ez-docker-for-laravel.png" alt="EZ Docker For Laravel" width="412" height="128" />
-
-  <p>easy to set up, robust and production ready environment for Laravel using Docker, Docker Compose and bash script.</p>
+  <h1>EZ Docker For .NET</h1>
+  <p>easy to set up, robust and production ready environment for .NET (ASP.NET Core) apps using Docker, Docker Compose and bash script.</p>
   <p>currently these scripts are debian based and tested on ubuntu 22.04.3 live Server</p>
 </div>
 
 <!-- About the Project -->
 
-## <h1>EZ Docker For Laravel</h1>
-EZ Docker For Laravel provides an easy-to-use, production-ready environment for running Laravel applications using Docker and Docker Compose. It simplifies the deployment process by offering a set of scripts to manage configurations, deploy, and maintain Laravel projects efficiently across various environments, such as test, staging, and production. The software streamlines server setup and management, offering features like support for Nginx, MySQL, and PHP-FPM, as well as additional services and extensions tailored to Laravel's requirements. By following the steps outlined in this readme, you can quickly set up your Laravel project and deploy it for reliable and scalable hosting.
+## :star2: About
 
-*Production-ready and security-hardened. Successfully tested in dev, test, and staging environments.*
+EZ Docker For .NET runs ASP.NET Core applications on a single Linux server with Docker and Docker
+Compose. One command line, `ez`, sets up the server, runs the services every app shares (a reverse
+proxy with Let's Encrypt, SQL Server or PostgreSQL, Redis, Seq for logs), and creates and deploys
+each app to `dev`, `test`, `staging` and `production`. It's the .NET edition of
+[EZ Docker For Laravel](https://github.com/MansourM/ez-docker-for-laravel), and keeps its shape:
+the same commands, shared services, environments and both deploy modes.
+
+```
+CI: test + build image ──push──► registry ──pull──► server: ./ez dotnet deploy <app> production --tag sha-…
+                                                       │
+nginx-pm (80/443, Let's Encrypt) ──► <app>_production :8080 ─┐
+                                    <app>_staging    :8080 ─┼─ mssql | postgres, redis, seq
+                                    <app>_test       :8080 ─┘   (one Docker network)
+```
+
+**What a deploy does** (`./ez dotnet deploy <app> <env>`):
+
+1. builds the image on the server from git (**build mode**), or pulls the one CI built and tested (**image mode**, `--tag`);
+2. creates the environment's own database and login, if missing;
+3. runs the EF Core migrations bundle (`MIGRATIONS=true`), after an optional backup command; if either fails, the running version is left alone;
+4. starts the new version and waits for its health check (`/healthz`);
+5. if it isn't healthy, **rolls back** to the previous version and fails.
 
 <!-- Security Features -->
 
 ## :shield: Security Features
 
-EZ Docker For Laravel is production-ready with comprehensive security hardening:
+- **Input validation**: app names, environments, project paths, image tags, Git URLs and SQL identifiers are validated before use
+- **No passwords on command lines**: database passwords reach `sqlcmd`/`psql` through the environment, never `argv`
+- **Least privilege**: each app environment gets its own database login; apps never see the `sa`/`postgres` password or the registry token
+- **Hardened images**: Microsoft's `aspnet` runtime (no SDK), non-root user (uid 1654), no secrets baked in
+- **Pinned versions**: every shared service, with health checks
+- **Admin UIs on loopback only**: Nginx Proxy Manager, Seq and Portainer are reached through an SSH tunnel
+- **Access control**: Docker group membership (no root required, except `sudo` for deploys' `chown`)
 
-- **SQL Injection Protection** - Validated identifiers, parameterized queries, password sanitization
-- **Input Validation** - Strict validation for all user inputs (app names, environments, credentials)
-- **Docker Security** - Pinned image versions, health checks, no `latest` tags
-- **Security Headers** - HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and more
-- **Access Control** - Docker group membership (no root required), minimal privileges
-
-**Security Status**: ✅ Production Ready | 🔒 LOW RISK
-
-For complete security documentation, see:
-- [SECURITY.md](SECURITY.md) - Security policy, best practices, vulnerability reporting
+See [SECURITY.md](SECURITY.md).
 
 <!-- Getting Started -->
 
@@ -35,55 +51,29 @@ For complete security documentation, see:
 
 ### Platform Requirements
 
-**Supported Platforms:**
-- **Operating System**: Debian-based Linux distributions
-- **Tested On**: Ubuntu 22.04.3 LTS (Live Server)
-- **Shell**: Bash 4.0+ (required for associative arrays)
+- **Operating System**: Debian-based Linux (tested on Ubuntu 22.04.3 LTS)
+- **Shell**: Bash 4.2+
 - **Docker**: Docker Engine 20.10+ and Docker Compose V2
+- **SQL Server** (the default database) needs an **amd64** host with 2 GB+ of RAM; use `DB_ENGINE=postgres` on arm64
 
-**Why Debian/Ubuntu Only?**
-
-This tool is specifically designed and tested for Debian-based systems because:
-- Uses APT package manager for Docker installation
-- Relies on Debian-specific paths and configurations
-- Tested extensively on Ubuntu 22.04.3 LTS
-- Shell scripts use bash features available in Debian/Ubuntu
-
-**Windows/macOS Users:**
-
-If you want to use this tool on Windows or macOS, you can:
-- **Windows**: Use WSL2 (Windows Subsystem for Linux) with Ubuntu
-- **macOS**: Not currently supported (different package managers and paths)
+**Windows/macOS users:** use a Linux server or VM (Windows: WSL2 with Ubuntu).
 
 ### Prerequisites
 
 **Docker Access Setup:**
 
-This tool requires access to Docker. You have two options:
-
-**Option 1: Add your user to the docker group (Recommended)**
 ```bash
-# Add your user to the docker group
-sudo usermod -aG docker $USER
-
-# Activate the group (or log out and back in)
-newgrp docker
-
-# Verify Docker access
-docker ps
+sudo usermod -aG docker $USER   # Option 1 (recommended): docker group, then log in again
+sudo ./ez <command>             # Option 2: run with sudo
 ```
 
-**Option 2: Run with sudo**
-```bash
-# If you prefer, you can run all commands with sudo
-sudo ./ez <command>
-```
+Deploys `chown` each environment's storage to the container's user, so run `ez dotnet deploy` with `sudo`.
 
 ### Installation Steps
 
 1. Clone the repository:
-   ```bash 
-   git clone https://github.com/MansourM/ez-docker-for-laravel.git && cd ez-docker-for-laravel
+   ```bash
+   git clone https://github.com/Andromeda-Network/ez-docker-for-dotnet.git && cd ez-docker-for-dotnet
    ```
 
 2. Install Docker engine (Optional, only if not installed already):
@@ -91,167 +81,136 @@ sudo ./ez <command>
    ./ez docker install
    ```
 
-3. Initialize your Laravel app:
-   ```bash
-   ./ez laravel new
-   ```
-
-4. Deploy your shared containers (Nginx, MySQL, phpMyAdmin):
+3. Deploy your shared containers. The first run asks a few questions and writes `docker/docker.env`, with generated passwords:
    ```bash
    ./ez shared deploy
    ```
-   
-5. Deploy your Laravel project:
+
+4. Initialize your .NET app (project path, .NET version, deploy mode, environments):
    ```bash
-   ./ez laravel deploy {app_name} {environment}
+   ./ez dotnet new
+   ```
+   Then put the app's settings and secrets in `apps/<app>/env/<env>.env`. .NET reads nested keys
+   with `__` (e.g. `Payments__ApiKey`); the connection string is already there.
+
+5. Deploy your .NET app:
+   ```bash
+   sudo ./ez dotnet deploy {app_name} {environment}
    ```
 
 ## :tada: :tada: :tada:
-* **now your website is running at `<your_ip_address>:<APP_PORT>`**
-* website is only exposed via `APP_PORT` in `dev` and `test` environments to access the `staging` or `production` website you need to configure them on your domain using npm proxy manager
+* **`dev` and `test` run on `<your_ip_address>:<APP_PORT>`.** `dev` runs `dotnet watch` on the live checkout in `apps/<app>/src-dev`.
+* **`staging` and `production` aren't exposed directly.** Add a proxy host in Nginx Proxy Manager for your domain, forwarding to `<app>_<env>`, port `8080`, with a Let's Encrypt certificate.
 
+## :package: Your app repository
 
-## :gear: Github actions
-You can find examples of GitHub Actions in the `.github.example/workflows` folder. Remember to remove the `.example` from the folder name before using the workflows.
+1. **Docker files:** copy `template/dotnet.Dockerfile` and `template/.dockerignore` to the repository root, next to the `.sln`/`.slnx`.
+2. **A health check:**
+   ```csharp
+   builder.Services.AddHealthChecks();   // + .AddDbContextCheck<AppDbContext>() …
+   app.MapHealthChecks("/healthz");
+   ```
+3. **Behind the proxy:** call `app.UseForwardedHeaders()` (see [`example/`](example/src/Example.Api/Program.cs)).
+4. **Configuration:** read everything from configuration (`ConnectionStrings:Default`, `Section:Key`), never from files in the image.
+5. **Writable files:** write only under `/app/data`, the environment's `storage-<env>` volume.
+6. **EF Core migrations (optional):** set `MIGRATIONS=true` (and `EF_PROJECT` if the DbContext lives elsewhere). The Dockerfile's `migrations` stage builds a bundle that `ez` runs before each switch.
+
+```bash
+docker build -f dotnet.Dockerfile --build-arg PROJECT=src/MyApp/MyApp.csproj -t myapp .
+docker build -f dotnet.Dockerfile --build-arg PROJECT=src/MyApp/MyApp.csproj --target test .   # tests, inside the build
+```
+
+## :gear: CI/CD (GitHub Actions)
+
+Examples are in `.github.example/workflows`. Copy them to your app repository's `.github/workflows`.
+
+- **`ci.yml`**: build and test every push and pull request, and check that the image builds.
+- **`release.yml`**: on `staging` and `main`, run the tests inside the image, then push it and its migrations bundle to GitHub Container Registry (`sha-<commit>` tags). It then deploys over SSH with `./ez dotnet deploy <app> <env> --tag sha-<commit>`.
+  - **Repository variables:** `APP_NAME`, `PROJECT`, `MIGRATIONS`, `EZ_DIR`.
+  - **Environments:** `staging` and `production`, each with secrets `SSH_HOST`, `SSH_USER`, `SSH_KEY` (and `SSH_PORT`). Add required reviewers to `production` to approve its deploys.
+
+For image mode, set `DEPLOY_MODE=image` and `APP_IMAGE=ghcr.io/<org>/<app>:latest` in the app's
+`env/app.env`. Set `REGISTRY_USER` and `REGISTRY_TOKEN` in `docker/docker.env`; for GitHub, the
+token needs `read:packages`. Rollback is then `./ez dotnet rollback <app> <env> <tag>`.
 
 ## :bulb: Additional Info
-Nginx Proxymanager default login information:
+Nginx Proxy Manager default login information (change it on first login). The admin UI listens
+on `127.0.0.1` only: `ssh -L 81:127.0.0.1:81 <server>`, then http://localhost:81.
 
 | Username            | Password  |
 |---------------------|-----------|
 | admin@example.com   | changeme  |
 
+**Logs and errors:** `./ez dotnet logs <app> <env>`. For searchable logs and errors across apps, keep
+`seq` in `SHARED_PROFILES` and send logs to `http://seq:5341` (e.g. `Seq.Extensions.Logging`:
+`builder.Logging.AddSeq(builder.Configuration.GetSection("Seq"))`). Its UI: `ssh -L 5380:127.0.0.1:5380 <server>`.
+
 <!-- Other Commands -->
 
 ## :eyes: Other Commands
 
-| Command                                    | Description                                                                                                |
-|--------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `./ez --help`                              | Shows all commands                                                                                         |
-| `./ez docker install`                      | Adds the Docker repository to APT sources and then installs the Docker engine.                             |
-| `./ez docker uninstall`                    | Uninstalls the Docker engine.                                                                              |
-| `./ez docker remove`                       | Removes all images, containers, and volumes. (You have to delete any edited configuration files manually.) |
-| `./ez shared deploy`                       | Builds and runs shared service containers (Nginx, MySQL, phpMyAdmin, Portainer).                           |
-| `./ez shared start`                        | Starts shared service containers.                                                                          |
-| `./ez shared stop`                         | Stops shared service containers.                                                                           |
-| `./ez shared restart`                      | Restarts shared service containers.                                                                        |
-| `./ez shared down`                         | Removes shared service containers.                                                                         |
-| `./ez laravel deploy <app_name> <app_env>` | Clones your Laravel repository, builds its assets, configures it for production, and then starts it.       |
-| `./ez laravel start <app_name> <app_env>`  | Starts Laravel container.                                                                                  |
-| `./ez laravel stop <app_name> <app_env>`   | Stops Laravel container.                                                                                   |
-| `./ez laravel restart <app_name> <app_env>`| Restarts Laravel container.                                                                                |
-| `./ez laravel down <app_name> <app_env>`   | Removes Laravel container.                                                                                 |
+| Command | Description |
+|---|---|
+| `./ez --help` | Shows all commands |
+| `./ez docker install` | Adds the Docker repository to APT sources and then installs the Docker engine. |
+| `./ez docker uninstall` | Uninstalls the Docker engine. |
+| `./ez docker remove` | Removes all images, containers, and volumes. (You have to delete any edited configuration files manually.) |
+| `./ez shared deploy` | Runs the shared services: Nginx Proxy Manager and Redis, the database (`DB_ENGINE`) and the optional ones in `SHARED_PROFILES` (Seq, Portainer). |
+| `./ez shared start\|stop\|restart\|down` | Starts, stops, restarts or removes the shared containers. |
+| `./ez dotnet new` | Sets up a new .NET app in `apps/<app>`. |
+| `./ez dotnet deploy <app> <env> [--tag TAG]` | Builds (or pulls `TAG`), creates the database, migrates, starts, health-checks, rolls back if unhealthy. |
+| `./ez dotnet start\|stop\|restart <app> <env>` | Starts, stops or restarts the app's container (`--update`: pull the source first, dev). |
+| `./ez dotnet down <app> <env>` | Removes the environment's containers (its storage stays). |
+| `./ez dotnet logs <app> <env>` | Follows the app's logs. |
+| `./ez dotnet status <app> <env>` | Shows the containers and the deployed version. |
+| `./ez dotnet migrate <app> <env>` | Runs the EF Core migrations bundle. |
+| `./ez dotnet rollback <app> <env> <tag>` | Image mode: redeploys an earlier tag. |
 
 **Note:** If you haven't added your user to the docker group, prefix commands with `sudo`.
 
-<!-- PHP Extensions -->
+## :hammer_and_wrench: .NET Version
 
-## :elephant: PHP Version
+Each app picks its own .NET version: `ez dotnet new` stores `DOTNET_VERSION` in `apps/<app>/env/app.env`,
+and `dotnet.Dockerfile` builds on `mcr.microsoft.com/dotnet/sdk:<version>` and runs on `aspnet:<version>`.
 
-Each app picks its own PHP version. `ez laravel new` asks for it and stores
-`PHP_VERSION` in the app's `env/app.env`.
+- **Supported:** `8.0`, `9.0`, `10.0`
+- **Default:** `10.0`
 
-- **Supported:** `8.2`, `8.3`, `8.4`, `8.5`
-- **Default:** `8.5` (just press Enter at the prompt)
-
-To change an existing app's PHP version, edit `PHP_VERSION` in
-`apps/<app>/env/app.env` and rebuild (`ez laravel deploy ...`). Apps created
-before this feature have no `PHP_VERSION` key and continue to build on `8.3`.
-
-> Note: OPcache ships compiled into PHP 8.5+, whereas 8.2–8.4 provide it as a
-> separate module — the Dockerfiles handle this automatically, so every
-> supported version builds with the same extension set.
-
-## :heavy_plus_sign: PHP Extensions
-
-I have installed the minimum PHP plugins required to run Laravel (marked by ✔) in the container. You should add others based on your project's needs. Add them in `laravel.Dockerfile`.
-
-|         | Name | Explanation |
-|---------|------|-------------|
-| ✔ | [php8.2-cli](https://www.php.net/manual/en/features.commandline.php) | Command-line interface for PHP. |
-| ✔ | [php8.2-curl](https://www.php.net/manual/en/book.curl.php) | cURL library support for PHP. |
-| ✔ | [php8.2-mysql](https://www.php.net/manual/en/book.mysql.php) | MySQL database support for PHP. |
-| ✔ | [php8.2-mbstring](https://www.php.net/manual/en/book.mbstring.php) | Multibyte string support for PHP. |
-| ✔ | [php8.2-xml](https://www.php.net/manual/en/book.xml.php) | XML support for PHP. |
-| &cross; | [php8.2-imap](https://www.php.net/manual/en/book.imap.php) | IMAP support for PHP. |
-| &cross; | [php8.2-dev](https://www.php.net/manual/en/intro.setup.php) | Development files for PHP. |
-| &cross; | [php8.2-pgsql](https://www.php.net/manual/en/book.pgsql.php) | PostgreSQL database support for PHP. |
-| &cross; | [php8.2-sqlite3](https://www.php.net/manual/en/book.sqlite3.php) | SQLite3 database support for PHP. |
-| &cross; | [php8.2-gd](https://www.php.net/manual/en/book.image.php) | GD library support for PHP. |
-| &cross; | [php8.2-zip](https://www.php.net/manual/en/book.zip.php) | ZIP archive support for PHP. |
-| &cross; | [php8.2-bcmath](https://www.php.net/manual/en/book.bc.php) | BCMath arbitrary precision mathematics support for PHP. |
-| &cross; | [php8.2-soap](https://www.php.net/manual/en/book.soap.php) | SOAP support for PHP. |
-| &cross; | [php8.2-intl](https://www.php.net/manual/en/book.intl.php) | Internationalization support for PHP. |
-| &cross; | [php8.2-readline](https://www.php.net/manual/en/book.readline.php) | Readline library support for PHP. |
-| &cross; | [php8.2-ldap](https://www.php.net/manual/en/book.ldap.php) | LDAP support for PHP. |
-| &cross; | [php8.2-msgpack](https://www.php.net/manual/en/book.msgpack.php) | MessagePack support for PHP. |
-| &cross; | [php8.2-igbinary](https://www.php.net/manual/en/book.igbinary.php) | Igbinary support for PHP. |
-| &cross; | [php8.2-redis](https://www.php.net/manual/en/book.redis.php) | Redis support for PHP. |
-| &cross; | [php8.2-swoole](https://www.php.net/manual/en/book.swoole.php) | Swoole extension for PHP. |
-| &cross; | [php8.2-memcached](https://www.php.net/manual/en/book.memcached.php) | Memcached support for PHP. |
-| &cross; | [php8.2-pcov](https://github.com/krakjoe/pcov) | Code coverage driver for PHP. |
-| &cross; | [php8.2-xdebug](https://xdebug.org/docs/) | Xdebug support for PHP. |
-| &cross; | [php8.2-imagick](https://www.php.net/manual/en/book.imagick.php) | ImageMagick extension for PHP. |
-
+Native dependencies (e.g. `libgdiplus`, fonts for PDF generation) go in the Dockerfile's final
+stage, as an `apt-get install` next to `curl`.
 
 <!-- Health Check Monitoring -->
 
 ## :heartbeat: Health Check Monitoring
 
-All shared services include built-in health checks for automatic monitoring and recovery.
-
 | Service | Health Check Method | Interval | Timeout | Retries | Start Period |
 |---------|-------------------|----------|---------|---------|--------------|
+| **Your app** | `curl http://localhost:8080/healthz` | 30s | 5s | 3 | 30s |
 | **Nginx Proxy Manager** | HTTP request to localhost:80 | 30s | 10s | 5 | 30s |
-| **MySQL 8** | mysqladmin ping | 30s | 10s | 5 | 30s |
-| **phpMyAdmin** | HTTP request to localhost:80 | 30s | 10s | 5 | 30s |
+| **SQL Server** | `sqlcmd -Q 'SELECT 1'` | 30s | 10s | 10 | 60s |
+| **PostgreSQL** | `pg_isready` | 10s | 5s | 5 | – |
+| **Redis** | `redis-cli ping` | 10s | 5s | 5 | – |
 
-**Monitor service health:**
 ```bash
 docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
 
-Docker automatically restarts unhealthy containers, ensuring minimal downtime and continuous availability.
-
-For detailed health check documentation, see [docs/HEALTH_CHECKS.md](docs/HEALTH_CHECKS.md).
+See [docs/HEALTH_CHECKS.md](docs/HEALTH_CHECKS.md).
 
 <!-- Roadmap -->
 
 ## :compass: TODOs
 
-- [ ] say hi!
-- [ ] add flag to use default input instead of prompting the user
+- [ ] add flag to use default input instead of prompting the user (`ez dotnet new -d`)
 - [ ] changing GIT_URL in app.env has no effect, will still pull from previous repo
-- [ ] make builder stage on volume so we have better caching on it?
-- [ ] add text log files
-- [ ] mayne merge docker and shared folder? needs better naming or refactor -probably
-- [ ] review https://laradock.io/getting-started/
-- [ ] review https://github.com/masoudfesahat/laravel-with-docker
-- [ ] APP_ENV in laravel.dockerfile is affecting build cache when building different env after each other ----> or not!!!?
-- [ ] be more strict on showing passwords in cli? (it is good for convenience though!)
-- [ ] add flags like -d on laravel new to go with the default instead of prompting the user, etc
-- [ ] image/build cache seems to be effected when service/container name is changed -> research this
-- [x] add docker to sudoers (replaced with docker group membership check)
-- [ ] add tags to --build then remove orphans
-- [ ] better handling of unused/dangling/orphan images/containers
-- [ ] explain how to change scripts and generate new a `ez` script with Bashly 
+- [ ] GitLab CI example for app repositories
+- [ ] backups: a `PRE_MIGRATION_COMMAND` example and a scheduled database backup
+- [ ] better handling of unused/dangling images (`docker image prune` after deploys)
 - [ ] mark project as production ready when 1 month of testing in production is done.
-
-<!-- Maybe -->
-
-## :compass: Maybe?
-
-- [ ] Implement a GUI (optional dashboard).
-- [ ] Add more (modular) services (e.g., Redis, Memcached).
-- [ ] Integrate a DNS service.
-- [ ] add local source (currently only git is supported)
-
 
 <!-- Troubleshooting -->
 
 ## :wrench: Troubleshooting
-
-### Common Issues
 
 **Docker Permission Issues**
 ```bash
@@ -259,27 +218,33 @@ sudo usermod -aG docker $USER && newgrp docker
 ```
 
 **Database Connection Problems**
-- Check credentials in `apps/{app_name}/env/{environment}.env`
-- Verify database exists: `docker exec ez-docker-for-laravel-mysql8-1 mysql -uroot -p{password} -e "SHOW DATABASES;"`
-- Ensure container is running: `docker ps | grep mysql`
+- Check `ConnectionStrings__Default` and `DB_*` in `apps/{app_name}/env/{environment}.env`; deploying again resets the login's password
+- Ensure the database server is healthy: `docker ps | grep mssql`
 
-**Container Won't Start**
-- Check logs: `docker logs <container_name>`
-- Verify health: `docker ps --format "table {{.Names}}\t{{.Status}}"`
-- Restart: `./ez shared restart` or `./ez laravel restart {app_name} {environment}`
+**Deploy Rolled Back**
+- The new version wasn't healthy within 180s; its last log lines are printed. `./ez dotnet logs {app_name} {environment}`
 
 **Input Validation Errors**
 - App names: Alphanumeric, hyphens, underscores only (max 64 chars)
 - Environments: `dev`, `test`, `staging`, or `production` only
-- Database names: Alphanumeric and underscores only (no hyphens)
+- `PROJECT`: a relative path to a `.csproj`
 
 For complete troubleshooting guide, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-<!-- Known Issues -->
+<!-- Development -->
 
-## :warning: Known Issues
+## :wrench: Developing ez
 
-- [x] having # in DB_PASSWORD will break the script ~~(everything will run but you cant access db as password won't be set properly)~~ **FIXED**: Password sanitization now handles special characters correctly
+`ez` is generated by [Bashly](https://bashly.dev) from `src/`, so never edit it directly. Edit `src/`, then:
+
+```bash
+gem install bashly -v 1.3.8
+LC_ALL=en_US.UTF-8 bashly generate    # regenerates ./ez
+bash tests/run.sh                     # the flows, against a stub docker
+```
+
+CI checks that `ez` matches `src/`, runs shellcheck and the flow tests, and builds and runs the
+example app with the template Dockerfile. See [docs/bashly.md](docs/bashly.md).
 
 <!-- Contributing -->
 
@@ -291,28 +256,21 @@ Contributions are always welcome! Feel free to fork the project and submit a pul
 
 ## :warning: License
 
-This project is licensed under the GNU GPL V2 License.
-
-
-<!-- Contact -->
-
-## :handshake: Contact
-
-Seyed Mansour Mirbehbahani - [sm.mirbehbahani@gmail.com](mailto:sm.mirbehbahani@gmail.com)
+This project is licensed under the GNU GPL V2 License, as is EZ Docker For Laravel, which it is forked from.
 
 <!-- Documentation -->
 
 ## :books: Documentation
 
-- **[Documentation Index](docs/README.md)** - Complete documentation guide
-- **[Security Policy](SECURITY.md)** - Security features and vulnerability reporting
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Detailed problem-solving guide
-- **[Health Checks](docs/HEALTH_CHECKS.md)** - Service monitoring and recovery
+- **[Documentation Index](docs/README.md)**: complete documentation guide
+- **[Security Policy](SECURITY.md)**: security features and vulnerability reporting
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)**: detailed problem-solving guide
+- **[Health Checks](docs/HEALTH_CHECKS.md)**: service monitoring and recovery
 
 <!-- Acknowledgments -->
 
 ## :gem: Acknowledgements
 
+- [EZ Docker For Laravel](https://github.com/MansourM/ez-docker-for-laravel) by Seyed Mansour Mirbehbahani, which this is forked from
 - [Awesome Readme Template](https://github.com/Louis3797/awesome-readme-template)
-- [M.Mahdi Mahmoodian](https://github.com/MMMahmoodian) Help/Review Nginx/FPM setup
-- [nginx-php-fpm](https://github.com/jkaninda/nginx-php-fpm) nginx/fpm configuration and dockerfile
+- [Microsoft: containerize a .NET app](https://learn.microsoft.com/dotnet/core/docker/build-container)

@@ -1,0 +1,100 @@
+# Copy to your app repository's .github/workflows/, and template/dotnet.Dockerfile to its root.
+# On a push to staging or main: test and build the image, push it to GitHub Container Registry,
+# then deploy it with ez over SSH (the app's DEPLOY_MODE=image on the server).
+#
+# Repository variables:   APP_NAME (as in `ez dotnet new`), PROJECT (src/MyApp/MyApp.csproj),
+#                         MIGRATIONS (true/false), EZ_DIR (where ez lives on the server)
+# Environments staging / production, each with secrets:
+#                         SSH_HOST, SSH_USER, SSH_KEY (private key), SSH_PORT (optional)
+# Add required reviewers to the production environment to approve production deploys.
+name: Release
+
+on:
+  push:
+    # test builds on the server from source (DEPLOY_MODE doesn't apply to it): deploy it with
+    # `ez dotnet deploy <app> test`, or add a job that runs that over SSH.
+    branches: [staging, main]
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      tag: sha-${{ steps.sha.outputs.short }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: sha
+        run: echo "short=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test inside the build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dotnet.Dockerfile
+          target: test
+          build-args: PROJECT=${{ vars.PROJECT }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: App image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dotnet.Dockerfile
+          build-args: PROJECT=${{ vars.PROJECT }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ steps.sha.outputs.short }}
+            ${{ env.IMAGE }}:${{ github.ref_name }}
+          cache-from: type=gha
+      - name: Migrations image
+        if: vars.MIGRATIONS == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dotnet.Dockerfile
+          target: migrations
+          build-args: PROJECT=${{ vars.PROJECT }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}-migrations:sha-${{ steps.sha.outputs.short }}
+          cache-from: type=gha
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    steps:
+      - name: Deploy with ez
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+          TAG: ${{ needs.image.outputs.tag }}
+          EZ_DIR: ${{ vars.EZ_DIR }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: APP_NAME,APP_ENV,TAG,EZ_DIR
+          script: |
+            set -e
+            cd "$EZ_DIR"
+            sudo ./ez dotnet deploy "$APP_NAME" "$APP_ENV" --tag "$TAG"
