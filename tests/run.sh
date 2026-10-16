@@ -8,7 +8,8 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 export PATH="$ROOT/tests/stub:$PATH" STUB_LOG="$WORK/docker.log" STUB_STATE="$WORK/state"
 # On a server ez runs with sudo and gives storage to the image's uid 1654; here, to ourselves.
-export IMAGE_USER_ID IMAGE_GROUP_ID MSSQL_UID; IMAGE_USER_ID=$(id -u); IMAGE_GROUP_ID=$(id -g); MSSQL_UID=$(id -u)
+export IMAGE_USER_ID IMAGE_GROUP_ID MSSQL_UID MSSQL_GID
+IMAGE_USER_ID=$(id -u); IMAGE_GROUP_ID=$(id -g); MSSQL_UID=$(id -u); MSSQL_GID=$(id -g)
 pass=0
 ok()   { echo "  ok   $*"; pass=$((pass + 1)); }
 fail() { echo "  FAIL $*"; echo "--- docker calls:"; cat "$STUB_LOG"; exit 1; }

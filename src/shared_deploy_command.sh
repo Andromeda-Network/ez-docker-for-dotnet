@@ -69,7 +69,7 @@ fi
 # the bind mount would be root's, and sqlservr would exit with "Permission denied".
 if [[ "$DB_ENGINE" == "mssql" ]]; then
   mkdir -p shared/mssql
-  if ! chown "${MSSQL_UID:-10001}:0" shared/mssql; then
+  if ! chown "${MSSQL_UID:-10001}:${MSSQL_GID:-0}" shared/mssql; then
     log_error "Cannot give shared/mssql to SQL Server's user (uid 10001): run ez with sudo."
     exit 1
   fi
